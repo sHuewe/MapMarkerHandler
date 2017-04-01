@@ -49,8 +49,8 @@ To handle camera changes following code works as OnCamerIdleListener:
 new GoogleMap.OnCameraIdleListener() {
 	@Override
 	public void onCameraIdle() {
-        float zoom = map.getCameraPosition().zoom;
-        Projection projection=map.getProjection();
+		float zoom = map.getCameraPosition().zoom;
+		Projection projection=map.getProjection();
 		handler.updateMarkerOnMap(MyActivity.this,map,projection,zoom);
 	}
 }
@@ -64,7 +64,7 @@ This is useful to react on click events on the markers. Following code demonstra
 ```java
 @Override
 public boolean onMarkerClick(Marker arg0) {
-    m_markerHandler.moveMarkerCursor(arg0);
+	m_markerHandler.moveMarkerCursor(arg0);
 	doSomethingWithThePicture(handler.getElementFromMarker(arg0));
 	return true;
 }
@@ -74,7 +74,7 @@ public boolean onMarkerClick(Marker arg0) {
 In our example this can be used to show the markers chronologicaly like offered by the [Geo Picture Map App](https://play.google.com/store/apps/details?id=com.shuewe.picturemap). Following code demonstrates it.
 ```java
 private void doSthWithNextPicture() {
-		handler.moveCursorNextSortable();
-		doSomethingWithThePicture(handler.getSortableElement());
+	handler.moveCursorNextSortable();
+	doSomethingWithThePicture(handler.getSortableElement());
 }
 ```
