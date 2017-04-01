@@ -1,6 +1,8 @@
 package com.shuewe.markerhandler;
 
 
+import android.app.Activity;
+import android.content.Context;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
 
@@ -123,39 +125,6 @@ public class MarkerHandler {
     }
 
     /**
-     * Draws the marker on the map.
-     *
-     * @param map instance of google map
-     */
-    public void drawOnMap(GoogleMap map) {
-        List<MapMarker> markerToDelete = new ArrayList<>();
-        Iterator<MapMarker> iterator = m_marker.iterator();
-        while (iterator.hasNext()) {
-            MapMarker marker = iterator.next();
-            if (marker.isOnMap()) {
-                if (marker.isTouched()) {
-                    marker.setMarker(map);
-                }
-            } else {
-                MapMarker.MARKER_MAP.remove(marker.getGoogleMarker());
-                Marker gMarker = marker.getGoogleMarker();
-                if (gMarker != null) {
-                    gMarker.remove();
-                }
-                markerToDelete.add(marker);
-            }
-        }
-        for (MapMarker markerDel : markerToDelete) {
-            m_marker.remove(markerDel);
-        }
-        if (m_chooseCursor) {
-            setSnippet(m_markerMap.get(getSortableElement()).getGoogleMarker());
-            m_markerMap.get(getSortableElement()).getGoogleMarker().showInfoWindow();
-            m_chooseCursor = false;
-        }
-    }
-
-    /**
      * Gets current sortable element.
      *
      * @return current element
@@ -242,19 +211,6 @@ public class MarkerHandler {
     }
 
     /**
-     * Sets a projection and zoom value to the queue. Values in the queue get read and used when the currently running
-     * marker update process is ready.
-     *
-     * @param projection of google map
-     * @param zoom of google map
-     */
-    public void setQueue(Projection projection, float zoom) {
-        m_queueProjection = projection;
-        m_queueZoom = zoom;
-        m_queuePending = true;
-    }
-
-    /**
      * Changes the view to the current sortable element. The current sortable element can be changed by moveCursorPrevSortable and
      * moveCursorNextSortable
      *
@@ -273,36 +229,64 @@ public class MarkerHandler {
     }
 
     /**
-     * Starts the update process of the map.
-     * This process needs some time, don't run it on UI thread!
-     * When thread is ready, call drawOnMap on the UI thread to show results!
+     * Updates the marker on a map.
      *
+     * @param context of the Activity
+     * @param map to be updated
      * @param projection of google map
      * @param zoom of google map
      */
-    public void updateMap(Projection projection, float zoom) {
-        m_queueProjection = null;
-        m_isBusy = true;
-        Set<I_SortableMapElement> elementsToAdd = updateVisibleElements(projection, m_markerMap, m_elements_vis);
-        if(m_startCase){
-            m_mapZoom=zoom;
-        }else {
-            if (m_mapZoom != zoom) {
-                int mode = m_mapZoom > zoom ? ZOOM_OUT : ZOOM_IN;
-                m_mapZoom = zoom;
-                //m_marker: no items get added or removed, just changed. some items may have no pictures any more -> isOnMap = false
-                elementsToAdd.addAll(MapMarker.handleZoomChange(projection, m_marker, mode, m_markerMap)); //changes m_markerMap and m_marker
+    public void updateMarkerOnMap(final Context context,final GoogleMap map, final Projection projection, final float zoom){
+        if(m_isBusy){
+            setQueue(projection,zoom);
+            return;
+        }
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                updateMap(projection,zoom);
+                ((Activity)context).runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        drawOnMap(map);
+                    }
+                });
+            }
+        });
+        thread.start();
+    }
+
+    /**
+     * Draws the marker on the map.
+     *
+     * @param map instance of google map
+     */
+    private void drawOnMap(GoogleMap map) {
+        List<MapMarker> markerToDelete = new ArrayList<>();
+        Iterator<MapMarker> iterator = m_marker.iterator();
+        while (iterator.hasNext()) {
+            MapMarker marker = iterator.next();
+            if (marker.isOnMap()) {
+                if (marker.isTouched()) {
+                    marker.setMarker(map);
+                }
+            } else {
+                MapMarker.MARKER_MAP.remove(marker.getGoogleMarker());
+                Marker gMarker = marker.getGoogleMarker();
+                if (gMarker != null) {
+                    gMarker.remove();
+                }
+                markerToDelete.add(marker);
             }
         }
-        updateMarker(elementsToAdd, projection);
-        m_startCase=false;
-
-        //Is there another update waiting?
-        if (m_queuePending) {
-            m_queuePending = false;
-            updateMap(m_queueProjection, m_queueZoom);
+        for (MapMarker markerDel : markerToDelete) {
+            m_marker.remove(markerDel);
         }
-        m_isBusy = false;
+        if (m_chooseCursor) {
+            setSnippet(m_markerMap.get(getSortableElement()).getGoogleMarker());
+            m_markerMap.get(getSortableElement()).getGoogleMarker().showInfoWindow();
+            m_chooseCursor = false;
+        }
     }
 
     /**
@@ -329,6 +313,19 @@ public class MarkerHandler {
     }
 
     /**
+     * Sets a projection and zoom value to the queue. Values in the queue get read and used when the currently running
+     * marker update process is ready.
+     *
+     * @param projection of google map
+     * @param zoom of google map
+     */
+    private void setQueue(Projection projection, float zoom) {
+        m_queueProjection = projection;
+        m_queueZoom = zoom;
+        m_queuePending = true;
+    }
+
+    /**
      * Sets the snippet and title of a marker.
      *
      * @param marker to set snippet for
@@ -336,6 +333,39 @@ public class MarkerHandler {
     private void setSnippet(Marker marker) {
         marker.setTitle((m_cursor + 1) + "/" + m_elementPositionsOnMap.size());
         marker.setSnippet(getSortableElement().getSortPropertyString());
+    }
+
+    /**
+     * Starts the update process of the map.
+     * This process needs some time, don't run it on UI thread!
+     * When thread is ready, call drawOnMap on the UI thread to show results!
+     *
+     * @param projection of google map
+     * @param zoom of google map
+     */
+    private void updateMap(Projection projection, float zoom) {
+        m_queueProjection = null;
+        m_isBusy = true;
+        Set<I_SortableMapElement> elementsToAdd = updateVisibleElements(projection, m_markerMap, m_elements_vis);
+        if(m_startCase){
+            m_mapZoom=zoom;
+        }else {
+            if (m_mapZoom != zoom) {
+                int mode = m_mapZoom > zoom ? ZOOM_OUT : ZOOM_IN;
+                m_mapZoom = zoom;
+                //m_marker: no items get added or removed, just changed. some items may have no pictures any more -> isOnMap = false
+                elementsToAdd.addAll(MapMarker.handleZoomChange(projection, m_marker, mode, m_markerMap)); //changes m_markerMap and m_marker
+            }
+        }
+        updateMarker(elementsToAdd, projection);
+        m_startCase=false;
+
+        //Is there another update waiting?
+        if (m_queuePending) {
+            m_queuePending = false;
+            updateMap(m_queueProjection, m_queueZoom);
+        }
+        m_isBusy = false;
     }
 
     /**

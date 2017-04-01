@@ -40,54 +40,21 @@ The initialization for our picture-example (with `pictures`is a List of `Picture
 ```java
 MarkerHandler handler=	new MarkerHandler(pictures, getResources().getDisplayMetrics());
 ```
-To draw markers to a map, you have to call two different methods. `updateMap(projection,zoom)` estimates all visible elements and the corresponding markers. The method needs as parameter the projection of the google map and the current set zoom.
-This method should run on a background thread.
-`drawOnMap(GoogleMap)` finnaly draws the markers to the map and have to run on UI thread.
-This is done by
+To draw markers to a map, you have to call 
 ```java
-Thread thread = new Thread(new Runnable() {
-	@Override
-	public void run() {
-		handler.updateMap(projection,zoom);
-		runOnUiThread(new Runnable() {
-			@Override
-			public void run() {
-				handler.drawOnMap(map);
-			}
-		});
-	}
-});
-thread.start(); 
+handler.updateMarkerOnMap(MyActivity.this,map,projection,zoom);
 ```
-To handle camera changes following code works:
+To handle camera changes following code works as OnCamerIdleListener:
 ```java
 new GoogleMap.OnCameraIdleListener() {
 	@Override
 	public void onCameraIdle() {
-        final float zoom = map.getCameraPosition().zoom;
-        final Projection projection=map.getProjection();
-		if(handler.isBusy()){
-			handler.setQueue(projection,zoom);
-		}else{
-			Thread thread = new Thread(new Runnable() {
-				@Override
-				public void run() {
-					handler.updateMap(projection,zoom);
-					runOnUiThread(new Runnable() {
-						@Override
-						public void run() {
-							handler.drawOnMap(map);
-						}
-					});
-				}
-			});
-			thread.start();
-		}
+        float zoom = map.getCameraPosition().zoom;
+        Projection projection=map.getProjection();
+		handler.updateMarkerOnMap(MyActivity.this,map,projection,zoom);
 	}
 }
 ```
-This code checks if the handler is busy. If the handler is busy the current camera position and zoom gets passed to a queue which starts when the currently running job is finished.
-
 ### Iterate through the data
 
 You can iterate through all elements stored under a certain marker on the map or iterate through your passed elements according to your passed sorting.
