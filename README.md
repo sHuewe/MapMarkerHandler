@@ -40,7 +40,7 @@ The initialization for our picture-example (with `pictures`is a List of `Picture
 ```java
 MarkerHandler handler=	new MarkerHandler(pictures, getResources().getDisplayMetrics());
 ```
-To draw markers to a map, you have to call two different methods. `updateMap(projection,zoom)` estimates all visible elements and the corresponding markers. It needs the projection of the google map and the current set zoom.
+To draw markers to a map, you have to call two different methods. `updateMap(projection,zoom)` estimates all visible elements and the corresponding markers. The method needs as parameter the projection of the google map and the current set zoom.
 This method should run on a background thread.
 `drawOnMap(GoogleMap)` finnaly draws the markers to the map and have to run on UI thread.
 This is done by
@@ -90,7 +90,7 @@ This code checks if the handler is busy. If the handler is busy the current came
 
 ### Iterate through the data
 
-You can iterate through all elements stored under a certain marker on the map or iterate through your passed elements according to yout passed sorting.
+You can iterate through all elements stored under a certain marker on the map or iterate through your passed elements according to your passed sorting.
 
 #### Iterate through elements of a marker
 This is useful to react on click events on the markers. Following code demonstrates it
@@ -105,7 +105,7 @@ public boolean onMarkerClick(Marker arg0) {
 
 #### Iterate through sorted elements
 In our example this can be used to show the markers chronologicaly like offered by the [Geo Picture Map App](https://play.google.com/store/apps/details?id=com.shuewe.picturemap). Following code demonstrates it.
-´´´java
+```java
 private void doSthWithNextPicture() {
 		handler.moveCursorNextSortable();
 		doSomethingWithThePicture(handler.getSortableElement());
