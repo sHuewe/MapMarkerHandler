@@ -40,7 +40,8 @@ The initialization for our picture-example (with `pictures`is a List of `Picture
 ```java
 MarkerHandler handler=	new MarkerHandler(pictures, getResources().getDisplayMetrics());
 handler.prepareSortedElements();//Only needed if sorted property should be used.
-								//For very large datasets (>5000), you should do this in a seperate thread. Make sure, that thread is finished before using sorting functions.
+				//For very large datasets (>5000), you should do this in a seperate thread. 
+				//Make sure, that this is finished before using sorting functions.
 ```
 To draw markers to a map, you have to call 
 ```java
