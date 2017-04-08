@@ -5,7 +5,7 @@ The [Geo Picture Map App](https://play.google.com/store/apps/details?id=com.shue
 
 ## How to use the library
 
-Compile this repository and add it as dependency to your Android project.
+You find compiled aar files to all releases in the [release folder](release). The [current version](release/mapMarkerHandler_v1.0.aar) belongs to the v1.0 tag of the repository. If you want to edit the library, you can compile this repository and add it as dependency to your Android project.
 
 ### Prepare data to be handeled by the library
 
@@ -35,7 +35,7 @@ public String getSortPropertyString(){
 
 ### Use the library
 
-First you have to pass a List of type `List<? extends I_SortableMapElement>` to the library. If you want to use functions related to the sorting function, this List have to be sorted by yourself (before passing it to the library).
+First you have to pass a List of type `List<? extends I_SortableMapElement>` to the library. If you want to use functions related to the sorting function, this List has to be sorted by yourself (before passing it to the library).
 The initialization for our picture-example (with `pictures`is a List of `PictureData`) is done by 
 ```java
 MarkerHandler handler=	new MarkerHandler(pictures, getResources().getDisplayMetrics());
