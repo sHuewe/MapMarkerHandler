@@ -63,7 +63,7 @@ public class MarkerHandler {
     private List<I_SortableMapElement> m_elements_vis;
 
     /**indicates if the markers are updated at the moment.*/
-    private boolean m_isBusy;
+    private volatile boolean m_isBusy;
 
     /**current zoom level.*/
     private float m_mapZoom;
@@ -122,6 +122,15 @@ public class MarkerHandler {
      */
     public boolean cursorHasPrevSortable() {
         return m_cursor > 0;
+    }
+
+    /**
+     * Returns the cursor for sortable elements.
+     *
+     * @return int cursor
+     */
+    public int getCursor(){
+        return m_cursor;
     }
 
     /**
@@ -198,6 +207,15 @@ public class MarkerHandler {
                 m_elementPositionsOnMap.add(0, i);
             }
         }
+    }
+
+    /**
+     * Sets cursor for sortable elements to given element.
+     *
+     * @param cursor to set cursor to
+     */
+    public void setSortedElements(int cursor){
+       m_cursor=cursor;
     }
 
     /**
