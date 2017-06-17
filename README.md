@@ -5,7 +5,7 @@ The [Geo Picture Map App](https://play.google.com/store/apps/details?id=com.shue
 
 ## How to use the library
 
-You find compiled aar files to all releases in the [release folder](release). The [current version](release/mapMarkerHandler_v1.0.aar) belongs to the v1.0 tag of the repository. If you want to edit the library, you can compile this repository and add it as dependency to your Android project.
+You find compiled aar files to all releases in the [release folder](release). The [current version](release/mapMarkerHandler_v1.1.aar) belongs to the v1.1 tag of the repository. If you want to edit the library, you can compile this repository and add it as dependency to your Android project.
 
 ### Prepare data to be handeled by the library
 
