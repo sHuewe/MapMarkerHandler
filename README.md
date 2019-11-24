@@ -6,6 +6,7 @@ Currently the library supports maps from google and from mapbox via following fl
  * google
  * mapbox
  * googleAndMapbox.
+ 
 By the use of this library it is very easy to switch between google an mapbox as map providers.
 
 ## How to use the library
