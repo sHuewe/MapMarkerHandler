@@ -2,14 +2,18 @@
 
 This library allows to show a large amount of markers on maps in Android. To allow this, the library sums up markers which would be positioned to near to each other on the map.
 The [Geo Picture Map App](https://play.google.com/store/apps/details?id=com.shuewe.picturemap) demonstrates a possible usage of the MapMarkerHandler.
-Currently the library is available in three flavors: google, mapbox and googleAndMapbox.
+Currently the library supports maps from google and from mapbox via following flavors:
+ * google
+ * mapbox
+ * googleAndMapbox.
+By the use of this library it is very easy to switch between google an mapbox as map providers.
 
 ## How to use the library
 
 You find compiled aar files to all releases in the [release folder](release). The current version belongs to the v2.0 tag of the repository. If you want to edit the library, you can compile this repository and add it as dependency to your Android project.
-[google](release/mapMarkerHandler_google_v2.0.aar)
-[mapbox](release/mapMarkerHandler_mapbox_v2.0.aar)
-[googleAndMapbox](release/mapMarkerHandler_googleandmapbox_v2.0.aar)
+* [google](release/mapMarkerHandler_google_v2.0.aar)
+* [mapbox](release/mapMarkerHandler_mapbox_v2.0.aar)
+* [googleAndMapbox](release/mapMarkerHandler_googleandmapbox_v2.0.aar)
 
 ### Prepare data to be handeled by the library
 
