@@ -1,17 +1,23 @@
 # MapMarkerHandler
 
-This library allows to show a large amount of markers on a google map in Android. To allow this, the library sums up markers which would be positioned to near to each other on the map.
+This library allows to show a large amount of markers on maps in Android. To allow this, the library sums up markers which would be positioned to near to each other on the map.
 The [Geo Picture Map App](https://play.google.com/store/apps/details?id=com.shuewe.picturemap) demonstrates a possible usage of the MapMarkerHandler.
+Currently the library is available in three flavors: google, mapbox and googleAndMapbox.
 
 ## How to use the library
 
-You find compiled aar files to all releases in the [release folder](release). The [current version](release/mapMarkerHandler_v1.1.aar) belongs to the v1.1 tag of the repository. If you want to edit the library, you can compile this repository and add it as dependency to your Android project.
+You find compiled aar files to all releases in the [release folder](release). The current version belongs to the v2.0 tag of the repository. If you want to edit the library, you can compile this repository and add it as dependency to your Android project.
+[google](release/mapMarkerHandler_google_v2.0.aar)
+[mapbox](release/mapMarkerHandler_mapbox_v2.0.aar)
+[googleAndMapbox](release/mapMarkerHandler_googleandmapbox_v2.0.aar)
 
 ### Prepare data to be handeled by the library
 
 The class of the data objects have to implement the interface `I_SortableMapElement`. The interface only consists of two methods. `getLatLng()` has to deliver the LatLng object which 
 should be displayed for the object. `getSortPropertyString()` allows to pass a string which can be used if the passed List of data-object was sorted. In this case it is possible to iterate 
-through the passed list and the String from this method gets used for the snippet of the marker. A simple example for a picture object, which gets sorted by date, could look like this:
+through the passed list and the String from this method gets used for the snippet of the marker. Further, you can implement getId(), if you want to control single elements by ID.
+ 
+ A simple example for a picture object, which gets sorted by date, could look like this:
 
 ```java
 public class PictureData implements I_SortableMapElement{
@@ -35,19 +41,64 @@ public String getSortPropertyString(){
 
 ### Use the library
 
+#### Init
 First you have to pass a List of type `List<? extends I_SortableMapElement>` to the library. If you want to use functions related to the sorting function, this List has to be sorted by yourself (before passing it to the library).
 The initialization for our picture-example (with `pictures`is a List of `PictureData`) is done by 
+
+##### Google
 ```java
-MarkerHandler handler=	new MarkerHandler(pictures, getResources().getDisplayMetrics());
+A_Handler handler=	new HandlerGoogle(pictures, getResources().getDisplayMetrics());
 handler.prepareSortedElements();//Only needed if sorted property should be used.
 				//For very large datasets (>5000), you should do this in a seperate thread. 
 				//Make sure, that this is finished before using sorting functions.
 ```
-To draw markers to a map, you have to call 
+##### Mapbox
 ```java
-handler.updateMarkerOnMap(MyActivity.this,map,projection,zoom);
+A_Handler handler=	new HandlerMapbox(pictures, getResources().getDisplayMetrics());
+handler.prepareSortedElements();//Only needed if sorted property should be used.
+				//For very large datasets (>5000), you should do this in a seperate thread. 
+				//Make sure, that this is finished before using sorting functions.
 ```
-To handle camera changes following code works as OnCamerIdleListener:
+
+#### Draw markers on map
+##### Google
+```java
+public void onMapReady(GoogleMap map) {
+     final float zoom = map.getCameraPosition().zoom;
+     final Projection projection = map.getProjection();
+     handler.updateMarkerOnMap(MyActivity.this, map, projection, zoom);
+}
+```
+##### Mapbox
+```java
+private MapView mapView = findViewById(R.id.myMapboxView);
+mapView.getMapAsync(new OnMapReadyCallback() {
+            @Override
+            public void onMapReady(@NonNull final MapboxMap mapboxMap) {
+
+                mapboxMap.setStyle(Style.MAPBOX_STREETS, new Style.OnStyleLoaded() {
+                    @Override
+                    public void onStyleLoaded(@NonNull Style style) {
+                        ((HandlerMapbox)handler).setMapboxMap(mapboxMap);
+                        ((HandlerMapbox)handler).setInfoView((TextView) findViewById(R.id.infoText));
+                        style.addImage(MapMarkerMapbox.ID_MARKER_DEFAULT,
+                                        BitmapUtils.getBitmapFromDrawable(getResources().getDrawable(R.drawable.marker)), //You have to add a suitable drawable for markers to your project
+                                        true);
+                        GeoJsonOptions geoJsonOptions = new GeoJsonOptions().withTolerance(0.4f);
+                        symbolManager = new SymbolManager(mapView,mapboxMap,style,null,geoJsonOptions);
+                        symbolManager.setIconAllowOverlap(true);
+                        final float zoom = (float)mapboxMap.getCameraPosition().zoom;
+                        final Projection projection = mapboxMap.getProjection();
+                        handler.updateMarkerOnMap(MyActivity.this, symbolManager, projection, zoom);
+                    }
+                });
+            }
+});
+```
+
+#### React on CameraIdle events:
+
+##### Google
 ```java
 new GoogleMap.OnCameraIdleListener() {
 	@Override
@@ -58,6 +109,17 @@ new GoogleMap.OnCameraIdleListener() {
 	}
 }
 ```
+##### Mapbox
+```java
+mapboxMap.addOnCameraIdleListener(new MapboxMap.OnCameraIdleListener() {
+    @Override
+    public void onCameraIdle() {
+        final float zoom = (float)mapboxMap.getCameraPosition().zoom;
+        final Projection projection = mapboxMap.getProjection();
+        handler.updateMarkerOnMap(MyActivity.this, symbolManager, projection, zoom);
+    }
+});
+```
 ### Iterate through the data
 
 You can iterate through all elements stored under a certain marker on the map or iterate through your passed elements according to your passed sorting.
@@ -67,7 +129,7 @@ This is useful to react on click events on the markers. Following code demonstra
 ```java
 @Override
 public boolean onMarkerClick(Marker arg0) {
-	m_markerHandler.moveMarkerCursor(arg0);
+	handler.moveMarkerCursor(arg0);
 	doSomethingWithThePicture(handler.getElementFromMarker(arg0));
 	return true;
 }
