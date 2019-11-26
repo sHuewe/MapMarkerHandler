@@ -159,7 +159,7 @@ private void doSthWithNextPicture() {
 }
 ```
 ## Handling of single markers per Id
-The simplest way to use the app, is by adding single (not clustered) markers by their Id. For doing this the init code from above can be simplified to the following:
+The simplest way to use this library, is by adding single (not clustered) markers by their Id. For doing this the init code from above can be simplified to the following:
  #### Google
  ```java
  A_Handler handler=	new HandlerGoogle(Collections.<I_SortableMapElement>emptyList(), getResources().getDisplayMetrics());
