@@ -9,14 +9,14 @@ Currently the library supports maps from google and from mapbox via following fl
  
 By the use of this library it is very easy to switch between google an mapbox as map providers.
 
-## How to use the library
+## Setup / Preparation
 
 You find compiled aar files to all releases in the [release folder](release). The current version belongs to the v2.0 tag of the repository. If you want to edit the library, you can compile this repository and add it as dependency to your Android project.
 * [google](release/mapMarkerHandler_google_v2.0.aar)
 * [mapbox](release/mapMarkerHandler_mapbox_v2.0.aar)
 * [googleAndMapbox](release/mapMarkerHandler_googleandmapbox_v2.0.aar)
 
-### Prepare data to be handeled by the library
+### Prepare data to be handled by the library
 
 The class of the data objects have to implement the interface `I_SortableMapElement`. The interface only consists of two methods. `getLatLng()` has to deliver the LatLng object which 
 should be displayed for the object. `getSortPropertyString()` allows to pass a string which can be used if the passed List of data-object was sorted. In this case it is possible to iterate 
@@ -27,37 +27,47 @@ through the passed list and the String from this method gets used for the snippe
 ```java
 public class PictureData implements I_SortableMapElement{
 
-...
+    private double m_lat,m_lng;
+    private String m_id,m_sortString;
 
-@Override
-public LatLng getLatLng(){
-	return new LatLng(m_lat,m_lng)
-}
+    public PictureData(double lat,double lng, String id,String sortString){
+        m_lat=lat;
+        m_lng=lng;
+        m_id=id;
+        m_sortString=sortString;
+    }
 
-@Override
-public String getSortPropertyString(){
-	return "Pictures taken on 2017/04/01";
-}
+    @Override
+    public LatLng getLatLng(){
+	    return new LatLng(m_lat,m_lng);
+    }
 
-...
+    @Override
+    public String getSortPropertyString(){
+	    return "Pictures taken on 2017/04/01"; 
+    }
 
+    @Override
+    public String getId(){
+        return m_id;
+    }
 }
 ```
 
-### Use the library
+## Cluster Data
 
-#### Init
+### Init
 First you have to pass a List of type `List<? extends I_SortableMapElement>` to the library. If you want to use functions related to the sorting function, this List has to be sorted by yourself (before passing it to the library).
 The initialization for our picture-example (with `pictures`is a List of `PictureData`) is done by 
 
-##### Google
+#### Google
 ```java
 A_Handler handler=	new HandlerGoogle(pictures, getResources().getDisplayMetrics());
 handler.prepareSortedElements();//Only needed if sorted property should be used.
 				//For very large datasets (>5000), you should do this in a seperate thread. 
 				//Make sure, that this is finished before using sorting functions.
 ```
-##### Mapbox
+#### Mapbox
 ```java
 A_Handler handler=	new HandlerMapbox(pictures, getResources().getDisplayMetrics());
 handler.prepareSortedElements();//Only needed if sorted property should be used.
@@ -65,8 +75,8 @@ handler.prepareSortedElements();//Only needed if sorted property should be used.
 				//Make sure, that this is finished before using sorting functions.
 ```
 
-#### Draw markers on map
-##### Google
+### Draw markers on map
+#### Google
 ```java
 public void onMapReady(GoogleMap map) {
      final float zoom = map.getCameraPosition().zoom;
@@ -74,7 +84,7 @@ public void onMapReady(GoogleMap map) {
      handler.updateMarkerOnMap(MyActivity.this, map, projection, zoom);
 }
 ```
-##### Mapbox
+#### Mapbox
 ```java
 private MapView mapView = findViewById(R.id.myMapboxView);
 mapView.getMapAsync(new OnMapReadyCallback() {
@@ -101,9 +111,9 @@ mapView.getMapAsync(new OnMapReadyCallback() {
 });
 ```
 
-#### React on CameraIdle events:
+### React on CameraIdle events:
 
-##### Google
+#### Google
 ```java
 new GoogleMap.OnCameraIdleListener() {
 	@Override
@@ -114,7 +124,7 @@ new GoogleMap.OnCameraIdleListener() {
 	}
 }
 ```
-##### Mapbox
+#### Mapbox
 ```java
 mapboxMap.addOnCameraIdleListener(new MapboxMap.OnCameraIdleListener() {
     @Override
