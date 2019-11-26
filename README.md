@@ -158,3 +158,36 @@ private void doSthWithNextPicture() {
 	doSomethingWithThePicture(handler.getSortableElement());
 }
 ```
+## Handling of single markers per Id
+The simplest way to use the app, is by adding single (not clustered) markers by their Id. For doing this the init code from above can be simplified to the following:
+ #### Google
+ ```java
+ A_Handler handler=	new HandlerGoogle(Collections.<I_SortableMapElement>emptyList(), getResources().getDisplayMetrics());
+ ```
+ #### Mapbox
+ ```java
+ A_Handler handler=	new HandlerMapbox(Collections.<I_SortableMapElement>emptyList(), getResources().getDisplayMetrics());
+ ```
+ For adding or removing markers to the map, you need to get Instances of `GoogleMap map` (for google), resp. `SymbolManager symbolManager` (for mapbox) like shown [here](#google-1) and [here](#mapbox-1).
+ Then you can add a blue marker for 
+  ```java
+  PictureData pic = new PictureData(40,20,"HOME","My home");
+  ```
+  by this code:
+  #### Google
+  ```java
+    handler.addElementWithId(pic,map,"My home",A_MapMarker.COLOR.BLUE);
+  ```
+  #### Mapbox
+  ```java
+    handler.addElementWithId(pic,symbolManager,"My home",A_MapMarker.COLOR.BLUE);
+  ```
+  To remove the marker, use this:
+  #### Google
+  ```java
+    handler.removeElementById(pic.getId(),map);
+  ```
+   #### Mapbox
+   ```java
+    handler.removeElementById(pic.getId(),symbolManager);
+   ```
