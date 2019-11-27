@@ -44,7 +44,7 @@ public class PictureData implements I_SortableMapElement{
 
     @Override
     public String getSortPropertyString(){
-	    return "Pictures taken on 2017/04/01"; 
+	    return m_sortString; 
     }
 
     @Override
