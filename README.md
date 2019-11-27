@@ -160,7 +160,7 @@ The simplest way to use this library, is by adding single (not clustered) marker
  ```java
  A_Handler mapHandler=	new HandlerMapbox(Collections.<I_SortableMapElement>emptyList(), getResources().getDisplayMetrics());
  ```
- For adding or removing markers to the map, you need to bind the handler to the corresponding map object like demonstrated [here](#google-1) and [here](#mapbox-1).
+ For adding or removing markers to the map, you need to bind the handler to the corresponding map object like demonstrated [here](#google) and [here](#mapbox).
  Then you can add a blue marker for 
   ```java
   PictureData pic = new PictureData(40,20,"HOME","My home");
