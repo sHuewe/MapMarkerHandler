@@ -26,10 +26,12 @@ import java.util.Map;
  * Implementation of A_MapMarker for google maps.
  */
 
-public class MapMarkerGoogle extends A_MapMarker<Marker,GoogleMap,Projection> {
+public class MapMarkerGoogle extends A_MapMarker<Marker, GoogleMap, Projection> {
 
-    /**Map tp define A_Marker.COLOR values for marker from google. */
-    Map<COLOR, BitmapDescriptor> COLOR_MAP= new HashMap<COLOR, BitmapDescriptor>() {{
+    /**
+     * Map tp define A_Marker.COLOR values for marker from google.
+     */
+    Map<COLOR, BitmapDescriptor> COLOR_MAP = new HashMap<COLOR, BitmapDescriptor>() {{
         put(COLOR.BLUE, BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE));
         put(COLOR.RED, BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
         put(COLOR.GREEN, BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN));
@@ -46,7 +48,7 @@ public class MapMarkerGoogle extends A_MapMarker<Marker,GoogleMap,Projection> {
     }
 
     @Override
-    public A_MapMarker getInstance(){
+    public A_MapMarker getInstance() {
         return new MapMarkerGoogle(m_handler);
     }
 
@@ -58,7 +60,7 @@ public class MapMarkerGoogle extends A_MapMarker<Marker,GoogleMap,Projection> {
     }
 
     @Override
-    public Marker setMarker(GoogleMap map,COLOR c) {
+    public Marker setMarker(GoogleMap map, COLOR c) {
         m_isTouched = false;
         if (m_marker != null) {
             m_handler.m_markerOnMap.remove(m_marker);

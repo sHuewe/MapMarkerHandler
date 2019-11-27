@@ -31,18 +31,18 @@ public class LatLngGoogleWrapper extends A_LatLngWrapper<LatLng> {
      *
      * @param latLng com.shuewe.markerhandler.LatLng
      */
-    public LatLngGoogleWrapper(com.shuewe.markerhandler.LatLng latLng){
+    public LatLngGoogleWrapper(com.shuewe.markerhandler.LatLng latLng) {
         super(latLng);
     }
 
     @Override
     public com.shuewe.markerhandler.LatLng toLatLng() {
 
-        return m_latLng_target == null ? new com.shuewe.markerhandler.LatLng(m_latLng_source.latitude,m_latLng_source.longitude) : m_latLng_target;
+        return m_latLng_target == null ? new com.shuewe.markerhandler.LatLng(m_latLng_source.latitude, m_latLng_source.longitude) : m_latLng_target;
     }
 
     @Override
     public LatLng toOtherLatLng() {
-        return m_latLng_source == null ? new LatLng(m_latLng_target.latitude,m_latLng_target.longitude) : m_latLng_source;
+        return m_latLng_source == null ? new LatLng(m_latLng_target.latitude, m_latLng_target.longitude) : m_latLng_source;
     }
 }

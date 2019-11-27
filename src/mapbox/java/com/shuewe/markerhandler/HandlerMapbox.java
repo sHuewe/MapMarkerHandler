@@ -11,7 +11,6 @@
 package com.shuewe.markerhandler;
 
 import android.app.Activity;
-import android.content.Context;
 import android.graphics.Color;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -41,7 +40,7 @@ public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol> 
     /**
      * Map instance, only needed for the sortable elements option (to move camera), has to be set by setter if needed
      */
-    private MapboxMap m_map;
+    private MapboxMap m_mapIntance;
     /**
      * The currently active marker
      */
@@ -65,27 +64,25 @@ public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol> 
      * Activates given marker.
      *
      * @param symbol to be activated
-     * @param map    SymbolManager
      */
-    public void activateMarker(Symbol symbol, SymbolManager map) {
-        activateMarker(symbol, map, false);
+    public void activateMarker(Symbol symbol) {
+        activateMarker(symbol, false);
     }
 
     /**
      * Activates given marker.
      *
      * @param symbol                to be activated
-     * @param map                   SymbolManager
      * @param infoFromSingleElement indicates if info should come from I_SortableMapElement or from whole marker
      */
-    public void activateMarker(Symbol symbol, SymbolManager map, boolean infoFromSingleElement) {
+    public void activateMarker(Symbol symbol, boolean infoFromSingleElement) {
         Log.d("Marker Icon Color", symbol.getIconColor());
         if (m_marked != null && !symbol.equals(m_marked)) { //Reset old marked symbol
             A_MapMarker marker = m_markerOnMap.get(m_marked);
             m_markerOnMap.remove(m_marked);
             m_marked.setIconColor(m_defaultColor);
             m_markerOnMap.put(m_marked, marker);
-            map.update(m_marked);
+            m_map.update(m_marked);
         }
         if (!symbol.equals(m_marked)) { //Set new marked symbol
             m_defaultColor = symbol.getIconColor();
@@ -94,7 +91,7 @@ public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol> 
             symbol.setIconColor(Color.RED);
             m_markerOnMap.put(symbol, marker);
             m_marked = symbol;
-            map.update(symbol);
+            m_map.update(symbol);
         }
         if (m_textView != null) {
             String text;
@@ -109,11 +106,23 @@ public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol> 
         }
     }
 
+    /**
+     * Init method for mapbox
+     *
+     * @param context       Activity context
+     * @param symbolManager to set markers
+     * @param mapInstance   instance of the map
+     */
+    public void init(Activity context, SymbolManager symbolManager, MapboxMap mapInstance) {
+        init(context, symbolManager);
+        m_mapIntance = mapInstance;
+    }
+
     @Override
-    public void removeMarker(Symbol marker, SymbolManager map) {
+    public void removeMarker(Symbol marker) {
         if (marker != null) {
             m_markerOnMap.remove(marker);
-            map.delete(marker);
+            m_map.delete(marker);
         }
     }
 
@@ -126,38 +135,28 @@ public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol> 
         m_textView = view;
     }
 
-    /**
-     * Sets the MapboxMap instance.
-     * Only needed, if iteration over sorted list is used (because it needs to move the camera)
-     *
-     * @param map MapboxMap instance
-     */
-    public void setMapboxMap(MapboxMap map) {
-        m_map = map;
-    }
-
     @Override
-    public void showCurrentSortableMarker(SymbolManager map) {
+    public void showCurrentSortableMarker() {
         //Check if element is on map
         if (m_markerMap.containsKey(getSortableElement())) {
             //Yes, it is..
             Symbol s = ((MapMarkerMapbox) m_markerMap.get(getSortableElement())).getMarker();
-            if (m_map == null) {
+            if (m_mapIntance == null) {
                 return;
             }
             CameraPosition position = new CameraPosition.Builder().target(s.getLatLng()).build();
-            m_map.animateCamera(CameraUpdateFactory.newCameraPosition(position));
-            activateMarker(s, map, true);
+            m_mapIntance.animateCamera(CameraUpdateFactory.newCameraPosition(position));
+            activateMarker(s, true);
             return;
         }
         //Element is not on map -> move to element position
         m_chooseCursor = true; //Flag indicates, that this method has to be called again to activate marker
         CameraPosition position = new CameraPosition.Builder().target(new LatLngMapboxWrapper(getSortableElement().getLatLng()).toOtherLatLng()).build();
-        m_map.animateCamera(CameraUpdateFactory.newCameraPosition(position));
+        m_mapIntance.animateCamera(CameraUpdateFactory.newCameraPosition(position));
     }
 
     @Override
-    public void updateMarkerOnMap(final Context context, final SymbolManager map, final Projection projection, final float zoom) {
+    public void updateMarkerOnMap(final Projection projection, final float zoom) {
         if (m_isBusy) {
             setQueue(projection, zoom);
             return;
@@ -166,14 +165,14 @@ public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol> 
             @Override
             public void run() {
 
-                ((Activity) context).runOnUiThread(new Runnable() {
+                ((Activity) m_context).runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         long t = System.currentTimeMillis();
                         updateMap(projection, zoom);
                         Log.d("MarkerHandler", "updateMap: " + (System.currentTimeMillis() - t));
                         t = System.currentTimeMillis();
-                        drawOnMap(map);
+                        drawOnMap();
                         Log.d("MarkerHandler", "drawOnMap: " + (System.currentTimeMillis() - t));
                     }
 

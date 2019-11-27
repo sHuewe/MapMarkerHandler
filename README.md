@@ -62,29 +62,25 @@ The initialization for our picture-example (with `pictures`is a List of `Picture
 
 #### Google
 ```java
-A_Handler handler=	new HandlerGoogle(pictures, getResources().getDisplayMetrics());
+A_Handler markerHandler=	new HandlerGoogle(pictures, getResources().getDisplayMetrics());
 handler.prepareSortedElements();//Only needed if sorted property should be used.
 				//For very large datasets (>5000), you should do this in a seperate thread. 
 				//Make sure, that this is finished before using sorting functions.
 ```
-#### Mapbox
-```java
-A_Handler handler=	new HandlerMapbox(pictures, getResources().getDisplayMetrics());
-handler.prepareSortedElements();//Only needed if sorted property should be used.
-				//For very large datasets (>5000), you should do this in a seperate thread. 
-				//Make sure, that this is finished before using sorting functions.
-```
-
-### Draw markers on map
-#### Google
+and bind the markerHandler to the GoogleMaps object in the `onMapReady` method:
 ```java
 public void onMapReady(GoogleMap map) {
-     final float zoom = map.getCameraPosition().zoom;
-     final Projection projection = map.getProjection();
-     handler.updateMarkerOnMap(MyActivity.this, map, projection, zoom);
+     markerHandler.init(MyActivity.this,map);
 }
 ```
 #### Mapbox
+```java
+A_Handler markerHandler=	new HandlerMapbox(pictures, getResources().getDisplayMetrics());
+handler.prepareSortedElements();//Only needed if sorted property should be used.
+				//For very large datasets (>5000), you should do this in a seperate thread. 
+				//Make sure, that this is finished before using sorting functions.
+```
+and bind the markerHandler to the SymbolManager and the MapboxMap object in the onStyleLoaded method:
 ```java
 private MapView mapView = findViewById(R.id.myMapboxView);
 mapView.getMapAsync(new OnMapReadyCallback() {
@@ -94,25 +90,21 @@ mapView.getMapAsync(new OnMapReadyCallback() {
                 mapboxMap.setStyle(Style.MAPBOX_STREETS, new Style.OnStyleLoaded() {
                     @Override
                     public void onStyleLoaded(@NonNull Style style) {
-                        ((HandlerMapbox)handler).setMapboxMap(mapboxMap);
-                        ((HandlerMapbox)handler).setInfoView((TextView) findViewById(R.id.infoText));
+                        ((HandlerMapbox)markerHandler).setInfoView((TextView) findViewById(R.id.infoText));
                         style.addImage(MapMarkerMapbox.ID_MARKER_DEFAULT,
                                         BitmapUtils.getBitmapFromDrawable(getResources().getDrawable(R.drawable.marker)), //You have to add a suitable drawable for markers to your project
                                         true);
                         GeoJsonOptions geoJsonOptions = new GeoJsonOptions().withTolerance(0.4f);
                         symbolManager = new SymbolManager(mapView,mapboxMap,style,null,geoJsonOptions);
-                        symbolManager.setIconAllowOverlap(true);
-                        final float zoom = (float)mapboxMap.getCameraPosition().zoom;
-                        final Projection projection = mapboxMap.getProjection();
-                        handler.updateMarkerOnMap(MyActivity.this, symbolManager, projection, zoom);
+                        symbolManager.setIconAllowOverlap(true); //Set to true, because the library should decide which markers are shown, not mapbox
+                        ((HandlerMapbox)markerHandler).init(MyActivity.this,symbolManager,mapboxMap);
                     }
                 });
             }
 });
 ```
-
-### React on CameraIdle events:
-
+### Draw markers on the map
+When the map is loaded, you can now draw the markers to the map by `markerHandler.updateMarkerOnMap(Projection projection, float zoom)`. This should be done when the map is ready and on camera idle events:
 #### Google
 ```java
 new GoogleMap.OnCameraIdleListener() {
@@ -120,7 +112,7 @@ new GoogleMap.OnCameraIdleListener() {
 	public void onCameraIdle() {
 		float zoom = map.getCameraPosition().zoom;
 		Projection projection=map.getProjection();
-		handler.updateMarkerOnMap(MyActivity.this,map,projection,zoom);
+		markerHandler.updateMarkerOnMap(projection,zoom);
 	}
 }
 ```
@@ -131,7 +123,7 @@ mapboxMap.addOnCameraIdleListener(new MapboxMap.OnCameraIdleListener() {
     public void onCameraIdle() {
         final float zoom = (float)mapboxMap.getCameraPosition().zoom;
         final Projection projection = mapboxMap.getProjection();
-        handler.updateMarkerOnMap(MyActivity.this, symbolManager, projection, zoom);
+        markerHandler.updateMarkerOnMap(projection, zoom);
     }
 });
 ```
@@ -162,32 +154,23 @@ private void doSthWithNextPicture() {
 The simplest way to use this library, is by adding single (not clustered) markers by their Id. For doing this the init code from above can be simplified to the following:
  #### Google
  ```java
- A_Handler handler=	new HandlerGoogle(Collections.<I_SortableMapElement>emptyList(), getResources().getDisplayMetrics());
+ A_Handler mapHandler=	new HandlerGoogle(Collections.<I_SortableMapElement>emptyList(), getResources().getDisplayMetrics());
  ```
  #### Mapbox
  ```java
- A_Handler handler=	new HandlerMapbox(Collections.<I_SortableMapElement>emptyList(), getResources().getDisplayMetrics());
+ A_Handler mapHandler=	new HandlerMapbox(Collections.<I_SortableMapElement>emptyList(), getResources().getDisplayMetrics());
  ```
- For adding or removing markers to the map, you need to get Instances of `GoogleMap map` (for google), resp. `SymbolManager symbolManager` (for mapbox) like shown [here](#google-1) and [here](#mapbox-1).
+ For adding or removing markers to the map, you need to bind the handler to the corresponding map object like demonstrated [here](#google-1) and [here](#mapbox-1).
  Then you can add a blue marker for 
   ```java
   PictureData pic = new PictureData(40,20,"HOME","My home");
   ```
   by this code:
-  #### Google
   ```java
-    handler.addElementWithId(pic,map,"My home",A_MapMarker.COLOR.BLUE);
-  ```
-  #### Mapbox
-  ```java
-    handler.addElementWithId(pic,symbolManager,"My home",A_MapMarker.COLOR.BLUE);
+    mapHandler.addElementWithId(pic,"My home",A_MapMarker.COLOR.BLUE);
   ```
   To remove the marker, use this:
-  #### Google
   ```java
-    handler.removeElementById(pic.getId(),map);
+    handler.removeElementById(pic.getId());
   ```
-   #### Mapbox
-   ```java
-    handler.removeElementById(pic.getId(),symbolManager);
-   ```
+  As you see, after initialization and binding the markerHandler to the map instances, you are completely independent of your map provider.

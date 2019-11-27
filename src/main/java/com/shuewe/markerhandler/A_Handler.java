@@ -11,7 +11,6 @@
 package com.shuewe.markerhandler;
 
 import android.app.Activity;
-import android.content.Context;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
@@ -38,97 +37,86 @@ public abstract class A_Handler<T, U, V> {
      * Default min distance.
      */
     protected static float MIN_MM_DISTANCE_DEFAULT = 2;
-
     /**
      * Min pixel distance for marker.
      */
     protected static int MIN_PIXEL_DISTANCE;
-
     /**
      * Zoom out.
      */
     protected static int ZOOM_IN = 2;
-
     /**
      * Zoom in.
      */
     protected static int ZOOM_OUT = 1;
-
     /**
      * Map to find marker object from given marker. Used to handle click events.
      */
     public Map<Object, A_MapMarker> m_markerOnMap = new HashMap<>();
-
     /**
      * Map to find marker object from given marker. Used to handle click events.
      */
     public Map<String, Object> m_nameMap = new HashMap<>();
-
     /**
      * Indicates if cursor should be used to select sortable element
      */
     protected boolean m_chooseCursor = false;
-
+    /**
+     * The activity instance.
+     */
+    protected Activity m_context;
     /**
      * cursor for the sortable property.
      */
     protected int m_cursor = 0;
-
     /**
      * positions in m_elements of objects which have a valid LatLng property.
      */
     protected List<Integer> m_elementPositionsOnMap;
-
     /**
      * all element data.
      */
     protected List<? extends I_SortableMapElement> m_elements;
-
     /**
      * visible elements.
      */
     protected List<I_SortableMapElement> m_elements_vis;
-
     /**
      * indicates if the markers are updated at the moment.
      */
     protected volatile boolean m_isBusy;
-
+    /**
+     * Map instance.
+     */
+    protected U m_map;
     /**
      * current zoom level.
      */
     protected float m_mapZoom;
-
     /**
      * All currently set marker objects.
      */
     protected List<A_MapMarker> m_marker;
-
     /**
      * Map containing element data and related marker Object.
      */
     protected Map<I_SortableMapElement, A_MapMarker> m_markerMap;
-
     /**
      * metrics of display.
      */
     protected DisplayMetrics m_metrics;
-
     /**
      * indicates if changes are pending.
      */
     protected boolean m_queuePending = false;
-
     /**
      * queued projection.
      */
     protected T m_queueProjection;
-
     /**
      * queued zoom.
      */
     protected float m_queueZoom;
-
     /**
      * indicates if marker handler gets started.
      */
@@ -156,21 +144,20 @@ public abstract class A_Handler<T, U, V> {
      * Adds a single element with a given Id to the map.
      *
      * @param element  the element to show on map (provides a LatLng and should provide an Id)
-     * @param map      object to add the element to
      * @param infoText the infoText corresponding to the element
      * @param c        the Color of the map. Instance of A_MapMarker.COLOR
      * @return the created instance of A_MapMarker
      */
-    public A_MapMarker addElementWithId(I_SortableMapElement element, U map, String infoText, A_MapMarker.COLOR c) {
+    public A_MapMarker addElementWithId(I_SortableMapElement element, String infoText, A_MapMarker.COLOR c) {
         if (m_nameMap.containsKey(element.getId())) {
-            removeElementById(element.getId(), map);
+            removeElementById(element.getId());
         }
         A_MapMarker marker = getMarkerInstance();
         marker.addElement(element);
         marker.refresh();
         marker.setInfoText(infoText);
         m_nameMap.put(element.getId(), marker);
-        marker.setMarker(map, c);
+        marker.setMarker(m_map, c);
         return marker;
     }
 
@@ -281,17 +268,16 @@ public abstract class A_Handler<T, U, V> {
      * Removes an element with given Id from the map.
      * See addElementWithId ad counterpart to this method.
      *
-     * @param id  to be removed
-     * @param map object to remove element from
+     * @param id to be removed
      */
-    public void removeElementById(String id, U map) {
+    public void removeElementById(String id) {
         A_MapMarker marker = (A_MapMarker) m_nameMap.get(id);
         if (marker == null) {
             Log.d("Marker Handler", "unable to delete marker id:" + id);
             Log.d("Marker Handler", "Available ids:" + m_nameMap.keySet().toString());
             return;
         }
-        removeMarker((V) marker.getMarker(), map);
+        removeMarker((V) marker.getMarker());
         m_nameMap.remove(id);
     }
 
@@ -299,9 +285,8 @@ public abstract class A_Handler<T, U, V> {
      * Removes the marker from the map
      *
      * @param marker to be removed
-     * @param map    instance of the map object
      */
-    public abstract void removeMarker(V marker, U map);
+    public abstract void removeMarker(V marker);
 
     /**
      * Sets the minimal marker spacing on the map.
@@ -325,20 +310,16 @@ public abstract class A_Handler<T, U, V> {
     /**
      * Changes the view to the current sortable element. The current sortable element can be changed by moveCursorPrevSortable and
      * moveCursorNextSortable
-     *
-     * @param map google map
      */
-    public abstract void showCurrentSortableMarker(U map);
+    public abstract void showCurrentSortableMarker();
 
     /**
      * Updates the marker on a map.
      *
-     * @param context    of the Activity
-     * @param map        object to be updated
      * @param projection of google map
      * @param zoom       of google map
      */
-    public void updateMarkerOnMap(final Context context, final U map, final T projection, final float zoom) {
+    public void updateMarkerOnMap(final T projection, final float zoom) {
         if (m_isBusy) {
             setQueue(projection, zoom);
             return;
@@ -349,11 +330,11 @@ public abstract class A_Handler<T, U, V> {
                 long t = System.currentTimeMillis();
                 updateMap(projection, zoom);
                 Log.d("MarkerHandler", "updateMap: " + (System.currentTimeMillis() - t));
-                ((Activity) context).runOnUiThread(new Runnable() {
+                ((Activity) m_context).runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         long t = System.currentTimeMillis();
-                        drawOnMap(map);
+                        drawOnMap();
                         Log.d("MarkerHandler", "drawOnMap: " + (System.currentTimeMillis() - t));
                     }
 
@@ -365,10 +346,8 @@ public abstract class A_Handler<T, U, V> {
 
     /**
      * Draws the marker on the map.
-     *
-     * @param map instance of google map
      */
-    protected void drawOnMap(U map) {
+    protected void drawOnMap() {
         String debugName = "OSM draw";
         Log.d(debugName, "start");
         Log.d(debugName, "Currently #Marker:" + m_marker.size());
@@ -381,11 +360,11 @@ public abstract class A_Handler<T, U, V> {
                 Log.d(debugName, "keep Marker");
                 if (marker.isTouched()) {
                     Log.d(debugName, "set new Position");
-                    marker.setMarker(map);
+                    marker.setMarker(m_map);
                 }
             } else {
                 Log.d(debugName, "not on map, remove");
-                removeMarker((V) marker.getMarker(), map);
+                removeMarker((V) marker.getMarker());
                 markerToDelete.add(marker);
             }
         }
@@ -395,7 +374,7 @@ public abstract class A_Handler<T, U, V> {
         Log.d(debugName, "update finished");
         Log.d(debugName, "Currently #Marker:" + m_marker.size());
         if (m_chooseCursor) {
-            showCurrentSortableMarker(map);
+            showCurrentSortableMarker();
             m_chooseCursor = false;
         }
     }
@@ -414,6 +393,26 @@ public abstract class A_Handler<T, U, V> {
      * @return a map with changed elements and a boolean indicating if element was added(=true) or removed(=false)
      */
     protected abstract Map<I_SortableMapElement, Boolean> getVisibleElements(T projection);
+
+    /**
+     * Initializes the handler.
+     *
+     * @param context Activity context
+     * @param map     instance
+     */
+    protected void init(Activity context, U map) {
+        m_context = context;
+        m_map = map;
+    }
+
+    /**
+     * Gets the map object of the handler
+     *
+     * @return U MapObject
+     */
+    public U getMapObject() {
+        return m_map;
+    }
 
     /**
      * Sets a projection and zoom value to the queue. Values in the queue get read and used when the currently running

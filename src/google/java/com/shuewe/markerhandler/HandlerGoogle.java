@@ -10,6 +10,7 @@
 
 package com.shuewe.markerhandler;
 
+import android.app.Activity;
 import android.util.DisplayMetrics;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -38,7 +39,7 @@ public class HandlerGoogle extends A_Handler<Projection, GoogleMap, Marker> {
     }
 
     @Override
-    public void removeMarker(Marker marker, GoogleMap map) {
+    public void removeMarker(Marker marker) {
         if (marker != null) {
             m_markerOnMap.remove(marker);
             marker.remove();
@@ -46,16 +47,21 @@ public class HandlerGoogle extends A_Handler<Projection, GoogleMap, Marker> {
     }
 
     @Override
-    public void showCurrentSortableMarker(GoogleMap map) {
+    public void init(Activity context, GoogleMap map) {
+        super.init(context, map);
+    }
+
+    @Override
+    public void showCurrentSortableMarker() {
         if (m_markerMap.containsKey(getSortableElement())) {
             Marker marker = ((MapMarkerGoogle) m_markerMap.get(getSortableElement())).getMarker();
             setSnippet(marker);
             marker.showInfoWindow();
-            map.moveCamera(CameraUpdateFactory.newLatLng(marker.getPosition()));
+            m_map.moveCamera(CameraUpdateFactory.newLatLng(marker.getPosition()));
             return;
         }
         m_chooseCursor = true;
-        map.moveCamera(CameraUpdateFactory.newLatLng(new LatLngGoogleWrapper(getSortableElement().getLatLng()).toOtherLatLng()));
+        m_map.moveCamera(CameraUpdateFactory.newLatLng(new LatLngGoogleWrapper(getSortableElement().getLatLng()).toOtherLatLng()));
     }
 
     @Override
