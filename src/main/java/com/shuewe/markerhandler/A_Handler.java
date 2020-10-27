@@ -11,6 +11,7 @@
 package com.shuewe.markerhandler;
 
 import android.app.Activity;
+import android.content.Context;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
@@ -93,6 +94,9 @@ public abstract class A_Handler<T, U, V> {
      * current zoom level.
      */
     protected float m_mapZoom;
+
+    protected OnMarkerClickListener m_markerClickListener=null;
+
     /**
      * All currently set marker objects.
      */
@@ -105,6 +109,42 @@ public abstract class A_Handler<T, U, V> {
      * metrics of display.
      */
     protected DisplayMetrics m_metrics;
+
+    public void setOnMarkerClickListener(OnMarkerClickListener listener){
+        m_markerClickListener=listener;
+        registerClickListener();
+    }
+
+    protected void handleClick(V marker){
+        m_markerClickListener.onMarkerClick(m_markerOnMap.get(marker));
+    }
+
+    protected abstract void registerClickListener();
+
+    protected MarkerTextGenerator m_textGenerator=new MarkerTextGenerator() {
+        @Override
+        public String getMarkerTitle(List<I_SortableMapElement> elements, int count) {
+            if(elements.size()==1){
+                return elements.get(0).getId();
+            }else{
+                return String.format(m_context.getResources().getString(R.string.mmh_elements),String.valueOf(elements.size()));
+            }
+        }
+
+        @Override
+        public String getMarkerDescription(List<I_SortableMapElement> elements, int count) {
+            if(elements.size()==1){
+                return elements.get(0).getSortPropertyString();
+            }else{
+                return (count+1)+"/"+elements.size();
+            }
+        }
+    };
+
+    public void setMarkerTextGenerator(MarkerTextGenerator textGenerator){
+        m_textGenerator=textGenerator;
+    }
+
     /**
      * indicates if changes are pending.
      */
@@ -155,7 +195,6 @@ public abstract class A_Handler<T, U, V> {
         A_MapMarker marker = getMarkerInstance();
         marker.addElement(element);
         marker.refresh();
-        marker.setInfoText(infoText);
         m_nameMap.put(element.getId(), marker);
         marker.setMarker(m_map, c);
         return marker;
@@ -207,6 +246,8 @@ public abstract class A_Handler<T, U, V> {
     public I_SortableMapElement getSortableElement() {
         return m_elements.get(m_elementPositionsOnMap.get(m_cursor));
     }
+
+
 
     /**
      * indicates if marker are updating now.

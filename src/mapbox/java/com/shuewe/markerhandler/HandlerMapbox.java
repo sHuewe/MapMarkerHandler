@@ -21,6 +21,7 @@ import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.Projection;
+import com.mapbox.mapboxsdk.plugins.annotation.OnSymbolClickListener;
 import com.mapbox.mapboxsdk.plugins.annotation.Symbol;
 import com.mapbox.mapboxsdk.plugins.annotation.SymbolManager;
 
@@ -31,7 +32,7 @@ import java.util.Map;
 /**
  * Implementation of A_Handler for mapbox
  */
-public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol> {
+public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol> implements OnSymbolClickListener {
 
     /**
      * The default color.
@@ -49,6 +50,16 @@ public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol> 
      * Optional textView to show info about marker.
      */
     private TextView m_textView;
+
+    @Override
+    public void onAnnotationClick(Symbol symbol) {
+        handleClick(symbol);
+    }
+
+    @Override
+    protected void registerClickListener() {
+        m_map.addClickListener(this);
+    }
 
     /**
      * Public constructor.
@@ -184,7 +195,7 @@ public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol> 
 
     @Override
     protected A_MapMarker getMarkerInstance() {
-        return new MapMarkerMapbox(this);
+        return new MapMarkerMapbox(this, m_textGenerator);
     }
 
     @Override

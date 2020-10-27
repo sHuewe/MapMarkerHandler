@@ -62,6 +62,8 @@ public abstract class A_MapMarker<T, S, U> {
      */
     private List<I_SortableMapElement> m_elements = new ArrayList<>();
 
+    protected MarkerTextGenerator m_textGenerator;
+
     /**
      * Info title.
      */
@@ -72,8 +74,9 @@ public abstract class A_MapMarker<T, S, U> {
      *
      * @param handler marker handler instance
      */
-    public A_MapMarker(A_Handler handler) {
+    public A_MapMarker(A_Handler handler, MarkerTextGenerator textGenerator) {
         m_handler = handler;
+        m_textGenerator=textGenerator;
     }
 
     /**
@@ -85,41 +88,10 @@ public abstract class A_MapMarker<T, S, U> {
         return m_elements;
     }
 
-    /**
-     * Gets the info text of the marker.
-     *
-     * @return the text corresponding to current cursor.
-     */
-    public String getInfoText() {
-        return m_customInfoText != null ? m_customInfoText : (m_cursor + 1) + "/" + getElements().size();
+    public  String getInfoText(){
+        return m_textGenerator.getMarkerDescription(getElements(),m_cursor);
     }
 
-    /**
-     * Sets the info text to override default behavior of getInfoText
-     *
-     * @param infoText to be displayed as info text
-     */
-    public void setInfoText(String infoText) {
-        m_customInfoText = infoText;
-    }
-
-    /**
-     * Gets the info title.
-     *
-     * @return the title
-     */
-    public String getInfoTitle() {
-        return m_infoTitle != null ? m_infoTitle : "Pictures";
-    }
-
-    /**
-     * Sets the title to override default behavior of getInfoTitle
-     *
-     * @param title to be set
-     */
-    public void setInfoTitle(String title) {
-        m_infoTitle = title;
-    }
 
     /**
      * Gets an instance of A_MapMarker.
@@ -264,7 +236,7 @@ public abstract class A_MapMarker<T, S, U> {
     /**
      * Moves the cursor.
      */
-    void moveCursor() {
+    public void moveCursor() {
         Log.d("moveMarkerCursor", m_cursor + " " + m_elements.size());
         if (m_cursor < (m_elements.size() - 1)) {
             m_cursor++;

@@ -51,13 +51,13 @@ public class MapMarkerMapbox extends A_MapMarker<Symbol, SymbolManager, Projecti
      *
      * @param handler A_Handler instance
      */
-    public MapMarkerMapbox(A_Handler handler) {
-        super(handler);
+    public MapMarkerMapbox(A_Handler handler, MarkerTextGenerator textGenerator) {
+        super(handler,textGenerator);
     }
 
     @Override
     public A_MapMarker getInstance() {
-        return new MapMarkerMapbox(m_handler);
+        return new MapMarkerMapbox(m_handler,m_textGenerator);
     }
 
     @Override

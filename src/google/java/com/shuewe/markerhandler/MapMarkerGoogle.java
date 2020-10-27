@@ -43,13 +43,13 @@ public class MapMarkerGoogle extends A_MapMarker<Marker, GoogleMap, Projection> 
      *
      * @param handler instance of A_Handler
      */
-    public MapMarkerGoogle(A_Handler handler) {
-        super(handler);
+    public MapMarkerGoogle(A_Handler handler, MarkerTextGenerator textGenerator) {
+        super(handler,textGenerator);
     }
 
     @Override
     public A_MapMarker getInstance() {
-        return new MapMarkerGoogle(m_handler);
+        return new MapMarkerGoogle(m_handler,m_textGenerator);
     }
 
     @Override
@@ -66,21 +66,20 @@ public class MapMarkerGoogle extends A_MapMarker<Marker, GoogleMap, Projection> 
             m_handler.m_markerOnMap.remove(m_marker);
             m_marker.remove();
         }
-        m_marker = map.addMarker(new MarkerOptions()
-                .position(new LatLngGoogleWrapper(m_center).toOtherLatLng())
-                .title(getInfoTitle())
-                .snippet(getInfoText())
-                .icon(COLOR_MAP.get(c)));
-
+        MarkerOptions options=new MarkerOptions().position(new LatLngGoogleWrapper(m_center).toOtherLatLng()).icon(COLOR_MAP.get(c));
+        if(m_textGenerator.getMarkerTitle(getElements(),m_cursor)!=null){
+            options=options.title(m_textGenerator.getMarkerTitle(getElements(),m_cursor)).snippet(m_textGenerator.getMarkerDescription(getElements(),m_cursor));
+        }
+        m_marker = map.addMarker(options);
         m_handler.m_markerOnMap.put(m_marker, this);
         return m_marker;
     }
 
     @Override
     protected void updateMarker() {
-        if (m_marker != null) {
-            m_marker.setTitle(getInfoTitle());
-            m_marker.setSnippet(getInfoText());
+        if (m_marker != null && m_textGenerator.getMarkerTitle(getElements(),m_cursor)!=null) {
+            m_marker.setTitle(m_textGenerator.getMarkerTitle(getElements(),m_cursor));
+            m_marker.setSnippet(m_textGenerator.getMarkerDescription(getElements(),m_cursor));
         }
     }
 }

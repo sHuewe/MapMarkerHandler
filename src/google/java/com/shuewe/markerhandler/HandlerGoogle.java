@@ -26,7 +26,18 @@ import java.util.Map;
 /**
  * Implementation of A_Handler for maps from google.
  */
-public class HandlerGoogle extends A_Handler<Projection, GoogleMap, Marker> {
+public class HandlerGoogle extends A_Handler<Projection, GoogleMap, Marker> implements GoogleMap.OnMarkerClickListener {
+
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        handleClick(marker);
+        return false;
+    }
+
+    @Override
+    protected void registerClickListener() {
+        m_map.setOnMarkerClickListener(this);
+    }
 
     /**
      * Public constructor.
@@ -66,7 +77,7 @@ public class HandlerGoogle extends A_Handler<Projection, GoogleMap, Marker> {
 
     @Override
     protected A_MapMarker getMarkerInstance() {
-        return new MapMarkerGoogle(this);
+        return new MapMarkerGoogle(this, m_textGenerator);
     }
 
     @Override
