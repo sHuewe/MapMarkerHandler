@@ -26,12 +26,17 @@ import java.util.Map;
 /**
  * Implementation of A_Handler for maps from google.
  */
-public class HandlerGoogle extends A_Handler<Projection, GoogleMap, Marker> implements GoogleMap.OnMarkerClickListener {
+public class HandlerGoogle extends A_Handler<Projection, GoogleMap, Marker, com.google.android.gms.maps.model.LatLngBounds> implements GoogleMap.OnMarkerClickListener {
 
     @Override
     public boolean onMarkerClick(Marker marker) {
         handleClick(marker);
         return false;
+    }
+
+    @Override
+    protected void updateSingleMarker(GoogleMap map, A_MapMarker marker) {
+        marker.updateMarker();
     }
 
     @Override
@@ -80,24 +85,12 @@ public class HandlerGoogle extends A_Handler<Projection, GoogleMap, Marker> impl
         return new MapMarkerGoogle(this, m_textGenerator);
     }
 
-    @Override
-    protected Map<I_SortableMapElement, Boolean> getVisibleElements(Projection projection) {
-        {
-            Map<I_SortableMapElement, Boolean> ret = new HashMap<>();
-            LatLngBounds bounds = projection.getVisibleRegion().latLngBounds;
-            for (I_SortableMapElement element : m_elements) {
-                if (bounds.contains(new LatLngGoogleWrapper(element.getLatLng()).toOtherLatLng())) {
-                    if (!m_elements_vis.contains(element) & !element.getLatLng().equals(new LatLng(0, 0))) {
-                        ret.put(element, true);
-                    }
-                } else {
-                    if (m_elements_vis.contains(element)) {
-                        ret.put(element, false);
-                    }
-                }
-            }
-            return ret;
-        }
+    protected boolean isInRegion(LatLngBounds bounds, LatLng place){
+        return bounds.contains(new LatLngGoogleWrapper(place).toOtherLatLng());
+    }
+
+    protected LatLngBounds getVisibleRegion(Projection projection){
+        return projection.getVisibleRegion().latLngBounds;
     }
 
     /**

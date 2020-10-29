@@ -19,6 +19,7 @@ import android.widget.TextView;
 
 import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
+import com.mapbox.mapboxsdk.geometry.LatLngBounds;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.Projection;
 import com.mapbox.mapboxsdk.plugins.annotation.OnSymbolClickListener;
@@ -32,20 +33,14 @@ import java.util.Map;
 /**
  * Implementation of A_Handler for mapbox
  */
-public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol> implements OnSymbolClickListener {
+public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol, LatLngBounds> implements OnSymbolClickListener {
 
-    /**
-     * The default color.
-     */
-    private String m_defaultColor;
+
     /**
      * Map instance, only needed for the sortable elements option (to move camera), has to be set by setter if needed
      */
     private MapboxMap m_mapIntance;
-    /**
-     * The currently active marker
-     */
-    private Symbol m_marked;
+
     /**
      * Optional textView to show info about marker.
      */
@@ -55,6 +50,7 @@ public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol> 
     public void onAnnotationClick(Symbol symbol) {
         handleClick(symbol);
     }
+
 
     @Override
     protected void registerClickListener() {
@@ -88,22 +84,7 @@ public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol> 
      */
     public void activateMarker(Symbol symbol, boolean infoFromSingleElement) {
         Log.d("Marker Icon Color", symbol.getIconColor());
-        if (m_marked != null && !symbol.equals(m_marked)) { //Reset old marked symbol
-            A_MapMarker marker = m_markerOnMap.get(m_marked);
-            m_markerOnMap.remove(m_marked);
-            m_marked.setIconColor(m_defaultColor);
-            m_markerOnMap.put(m_marked, marker);
-            m_map.update(m_marked);
-        }
-        if (!symbol.equals(m_marked)) { //Set new marked symbol
-            m_defaultColor = symbol.getIconColor();
-            A_MapMarker marker = m_markerOnMap.get(symbol);
-            m_markerOnMap.remove(symbol);
-            symbol.setIconColor(Color.RED);
-            m_markerOnMap.put(symbol, marker);
-            m_marked = symbol;
-            m_map.update(symbol);
-        }
+        toggleMarker(m_markerOnMap.get(symbol));
         if (m_textView != null) {
             String text;
             if (infoFromSingleElement) {
@@ -116,6 +97,12 @@ public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol> 
             m_textView.setVisibility(View.VISIBLE);
         }
     }
+
+    @Override
+    protected void updateSingleMarker(SymbolManager map,A_MapMarker marker){
+        map.update(((MapMarkerMapbox)marker).m_marker);
+    }
+
 
     /**
      * Init method for mapbox
@@ -199,20 +186,14 @@ public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol> 
     }
 
     @Override
-    protected Map<I_SortableMapElement, Boolean> getVisibleElements(com.mapbox.mapboxsdk.maps.Projection projection) {
-        Map<I_SortableMapElement, Boolean> ret = new HashMap<>();
-        com.mapbox.mapboxsdk.geometry.LatLngBounds bounds = projection.getVisibleRegion().latLngBounds;
-        for (I_SortableMapElement element : m_elements) {
-            if (bounds.contains(new LatLngMapboxWrapper(element.getLatLng()).toOtherLatLng())) {
-                if (!m_elements_vis.contains(element) & !element.getLatLng().equals(new LatLng(0, 0))) {
-                    ret.put(element, true);
-                }
-            } else {
-                if (m_elements_vis.contains(element)) {
-                    ret.put(element, false);
-                }
-            }
-        }
-        return ret;
+    protected boolean isInRegion(LatLngBounds bounds, LatLng place) {
+        return bounds.contains(new LatLngMapboxWrapper(place).toOtherLatLng());
     }
+
+    @Override
+    protected LatLngBounds getVisibleRegion(Projection projection) {
+        return projection.getVisibleRegion().latLngBounds;
+    }
+
+
 }

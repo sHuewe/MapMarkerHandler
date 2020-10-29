@@ -67,6 +67,7 @@ public class MapMarkerGoogle extends A_MapMarker<Marker, GoogleMap, Projection> 
             m_marker.remove();
         }
         MarkerOptions options=new MarkerOptions().position(new LatLngGoogleWrapper(m_center).toOtherLatLng()).icon(COLOR_MAP.get(c));
+        setColor(c);
         if(m_textGenerator.getMarkerTitle(getElements(),m_cursor)!=null){
             options=options.title(m_textGenerator.getMarkerTitle(getElements(),m_cursor)).snippet(m_textGenerator.getMarkerDescription(getElements(),m_cursor));
         }
@@ -81,5 +82,6 @@ public class MapMarkerGoogle extends A_MapMarker<Marker, GoogleMap, Projection> 
             m_marker.setTitle(m_textGenerator.getMarkerTitle(getElements(),m_cursor));
             m_marker.setSnippet(m_textGenerator.getMarkerDescription(getElements(),m_cursor));
         }
+        m_marker.setIcon(COLOR_MAP.get(getColor()));
     }
 }

@@ -17,6 +17,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Abstract class for Markers which represent one or multiple elements of type I_SortableMapElement
@@ -57,12 +58,21 @@ public abstract class A_MapMarker<T, S, U> {
      */
     private String m_customInfoText = null;
 
+    private UUID m_id;
+
     /**
      * List of all date of one marker.
      */
     private List<I_SortableMapElement> m_elements = new ArrayList<>();
 
     protected MarkerTextGenerator m_textGenerator;
+
+
+
+    public static final COLOR COLOR_SELECTED=COLOR.RED;
+    public static final COLOR COLOR_DEFAULT=COLOR.BLUE;
+
+    private COLOR m_color=COLOR_DEFAULT;
 
     /**
      * Info title.
@@ -75,9 +85,36 @@ public abstract class A_MapMarker<T, S, U> {
      * @param handler marker handler instance
      */
     public A_MapMarker(A_Handler handler, MarkerTextGenerator textGenerator) {
+        m_id=UUID.randomUUID();
         m_handler = handler;
         m_textGenerator=textGenerator;
     }
+
+    public COLOR getColor(){
+
+        return m_color;
+    }
+
+    public UUID getID(){
+        return m_id;
+    }
+
+    @Override
+    public boolean equals(Object obj){
+        if(!(obj instanceof A_MapMarker)){
+            return false;
+        }
+        A_MapMarker o = (A_MapMarker) obj;
+        return o.m_id.equals(this.m_id);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = 17;
+        result = 31 * result + m_id.hashCode();
+        return result;
+    }
+
 
     /**
      * Gets the list of elements represented by this marker.
@@ -126,6 +163,10 @@ public abstract class A_MapMarker<T, S, U> {
         return adjustMarkerZoomIn(projection, marker, markerMap);
     }
 
+    public void setColor(A_MapMarker.COLOR color){
+        m_color=color;
+    }
+
     /**
      * Adds this instance to given map as marker with color c.
      *
@@ -142,7 +183,7 @@ public abstract class A_MapMarker<T, S, U> {
      * @return marker instance created on the map
      */
     public T setMarker(S map) {
-        return setMarker(map, COLOR.BLUE);
+        return setMarker(map, getColor());
     }
 
     /**
@@ -273,11 +314,16 @@ public abstract class A_MapMarker<T, S, U> {
      * @param markerList to be added
      */
     private void addMarker(List<A_MapMarker> markerList) {
+        boolean isSelected=getColor().equals(COLOR_SELECTED);
         for (A_MapMarker marker : markerList) {
+            isSelected = isSelected || marker.getColor().equals(COLOR_SELECTED);
             addElements(marker.getElements());
             marker.removeAll();
         }
         m_isTouched = true;
+        if(isSelected){
+            setColor(COLOR_SELECTED);
+        }
     }
 
     /**

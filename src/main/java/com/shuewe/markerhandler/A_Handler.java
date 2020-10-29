@@ -12,6 +12,7 @@ package com.shuewe.markerhandler;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Color;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
@@ -31,8 +32,11 @@ import java.util.Set;
  * @param <T> Projection like parameter.
  * @param <U> Object which allows the creation of an marker on the map, e.g. the GoogleMap class
  * @param <V> Marker object, e.g. com.google.android.gms.maps.model.Marker (google) or com.mapbox.mapboxsdk.plugins.annotation.Symbol (mapbox)
+ * @param <W> LatLng Bounds
  */
-public abstract class A_Handler<T, U, V> {
+public abstract class A_Handler<T, U, V, W> {
+
+    static final String LOG_NAME="MapMarkerHandler";
 
     /**
      * Default min distance.
@@ -50,6 +54,14 @@ public abstract class A_Handler<T, U, V> {
      * Zoom in.
      */
     protected static int ZOOM_OUT = 1;
+    /**
+     * The currently active marker
+     */
+    protected A_MapMarker m_marked;
+    /**
+     * The default color.
+     */
+    protected A_MapMarker.COLOR m_defaultColor;
     /**
      * Map to find marker object from given marker. Used to handle click events.
      */
@@ -81,7 +93,7 @@ public abstract class A_Handler<T, U, V> {
     /**
      * visible elements.
      */
-    protected List<I_SortableMapElement> m_elements_vis;
+    protected Set<I_SortableMapElement> m_elements_notOnMap=new HashSet<I_SortableMapElement>();
     /**
      * indicates if the markers are updated at the moment.
      */
@@ -116,8 +128,39 @@ public abstract class A_Handler<T, U, V> {
     }
 
     protected void handleClick(V marker){
+        toggleMarker(m_markerOnMap.get(marker));
         m_markerClickListener.onMarkerClick(m_markerOnMap.get(marker));
     }
+
+    public void toggleMarker(A_MapMarker marker){
+        Log.i(LOG_NAME,"Try to activate marker: "+marker.getID().toString());
+        String markedId="null";
+        if(m_marked!=null){
+            markedId=m_marked.getID().toString();
+        }
+        Log.i(LOG_NAME, "Current marker:"+ markedId);
+        if (m_marked != null && !marker.equals(m_marked) && m_markerOnMap.containsKey(m_marked.m_marker)) { //Re
+            Log.i(LOG_NAME, "reset old marker");// set old marked symbol
+            m_markerOnMap.remove(m_marked.m_marker);
+            m_marked.setColor(m_defaultColor);
+            m_markerOnMap.put(m_marked.m_marker, m_marked);
+            updateSingleMarker(m_map,m_marked);
+            //m_map.update(m_marked);
+        }
+        if (!marker.equals(m_marked)) { //Set new marked symbol
+            Log.i(LOG_NAME, "Set new marked marker");
+            m_defaultColor = marker.getColor();//symbol.getIconColor();
+            m_markerOnMap.remove(marker.m_marker);
+            marker.setColor(A_MapMarker.COLOR_SELECTED);
+            //symbol.setIconColor(Color.RED);
+            m_markerOnMap.put(marker.m_marker, marker);
+            m_marked = marker;
+            updateSingleMarker(m_map,m_marked);
+            //m_map.update(symbol);
+        }
+    }
+
+    protected abstract void updateSingleMarker(U map,A_MapMarker m_marked);
 
     protected abstract void registerClickListener();
 
@@ -171,12 +214,12 @@ public abstract class A_Handler<T, U, V> {
     public A_Handler(List<? extends I_SortableMapElement> elements, DisplayMetrics metrics) {
         m_metrics = metrics;
         m_elements = elements;
-        m_elements_vis = new ArrayList<>();
         m_marker = new ArrayList<>();
         m_markerMap = new HashMap<>();
+        m_elements_notOnMap.addAll(elements);
         m_cursor = 0;
         m_startCase = true;
-        Log.d("MapMarklerHandler", elements.size() + " Objects found");
+        Log.d(LOG_NAME, elements.size() + " Objects found");
         setMarkerSpacing(TypedValue.COMPLEX_UNIT_MM, A_Handler.MIN_MM_DISTANCE_DEFAULT);
     }
 
@@ -314,8 +357,8 @@ public abstract class A_Handler<T, U, V> {
     public void removeElementById(String id) {
         A_MapMarker marker = (A_MapMarker) m_nameMap.get(id);
         if (marker == null) {
-            Log.d("Marker Handler", "unable to delete marker id:" + id);
-            Log.d("Marker Handler", "Available ids:" + m_nameMap.keySet().toString());
+            Log.d(LOG_NAME, "unable to delete marker id:" + id);
+            Log.d(LOG_NAME, "Available ids:" + m_nameMap.keySet().toString());
             return;
         }
         removeMarker((V) marker.getMarker());
@@ -369,14 +412,15 @@ public abstract class A_Handler<T, U, V> {
             @Override
             public void run() {
                 long t = System.currentTimeMillis();
+                Log.i(LOG_NAME, "start calculation");
                 updateMap(projection, zoom);
-                Log.d("MarkerHandler", "updateMap: " + (System.currentTimeMillis() - t));
+                Log.i(LOG_NAME, "Calculation ready, send to ui thread: " + (System.currentTimeMillis() - t));
                 ((Activity) m_context).runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         long t = System.currentTimeMillis();
                         drawOnMap();
-                        Log.d("MarkerHandler", "drawOnMap: " + (System.currentTimeMillis() - t));
+                        Log.i(LOG_NAME, "Draw ready: " + (System.currentTimeMillis() - t));
                     }
 
                 });
@@ -389,22 +433,21 @@ public abstract class A_Handler<T, U, V> {
      * Draws the marker on the map.
      */
     protected void drawOnMap() {
-        String debugName = "OSM draw";
-        Log.d(debugName, "start");
-        Log.d(debugName, "Currently #Marker:" + m_marker.size());
+        Log.d(LOG_NAME, "start");
+        Log.d(LOG_NAME, "Currently #Marker:" + m_marker.size());
 
         List<A_MapMarker> markerToDelete = new ArrayList<>();
         Iterator<A_MapMarker> iterator = m_marker.iterator();
         while (iterator.hasNext()) {
             A_MapMarker marker = iterator.next();
             if (marker.isOnMap()) {
-                Log.d(debugName, "keep Marker");
+                Log.d(LOG_NAME, "keep Marker");
                 if (marker.isTouched()) {
-                    Log.d(debugName, "set new Position");
+                    Log.d(LOG_NAME, "set new Position");
                     marker.setMarker(m_map);
                 }
             } else {
-                Log.d(debugName, "not on map, remove");
+                Log.d(LOG_NAME, "not on map, remove");
                 removeMarker((V) marker.getMarker());
                 markerToDelete.add(marker);
             }
@@ -412,8 +455,8 @@ public abstract class A_Handler<T, U, V> {
         for (A_MapMarker markerDel : markerToDelete) {
             m_marker.remove(markerDel);
         }
-        Log.d(debugName, "update finished");
-        Log.d(debugName, "Currently #Marker:" + m_marker.size());
+        Log.d(LOG_NAME, "update finished");
+        Log.d(LOG_NAME, "Currently #Marker:" + m_marker.size());
         if (m_chooseCursor) {
             showCurrentSortableMarker();
             m_chooseCursor = false;
@@ -427,13 +470,6 @@ public abstract class A_Handler<T, U, V> {
      */
     protected abstract A_MapMarker getMarkerInstance();
 
-    /**
-     * Estimates which elements are currently visible and compares this to the currently shown markers.
-     *
-     * @param projection of a google map
-     * @return a map with changed elements and a boolean indicating if element was added(=true) or removed(=false)
-     */
-    protected abstract Map<I_SortableMapElement, Boolean> getVisibleElements(T projection);
 
     /**
      * Initializes the handler.
@@ -480,8 +516,8 @@ public abstract class A_Handler<T, U, V> {
         m_queueProjection = null;
         m_isBusy = true;
         long t = System.currentTimeMillis();
-        Set<I_SortableMapElement> elementsToAdd = updateVisibleElements(projection, m_markerMap, m_elements_vis);
-        Log.d("MarkerHandler", "updateVisibleElements: " + (System.currentTimeMillis() - t));
+        Set<I_SortableMapElement> elementsToAdd = updateVisibleElements(projection, m_markerMap);
+        Log.i(LOG_NAME, "updateVisibleElements: " + (System.currentTimeMillis() - t));
         if (m_startCase) {
             m_mapZoom = zoom;
         }
@@ -492,11 +528,11 @@ public abstract class A_Handler<T, U, V> {
             //m_marker: no items get added or removed, just changed. some items may have no pictures any more -> isOnMap = false
             elementsToAdd.addAll(getMarkerInstance().handleZoomChange(projection, m_marker, mode, m_markerMap)); //changes m_markerMap and m_marker
         }
-        Log.d("MarkerHandler", "handleZoomChange: " + (System.currentTimeMillis() - t));
+        Log.i(LOG_NAME, "handleZoomChange: " + (System.currentTimeMillis() - t));
 
         t = System.currentTimeMillis();
         updateMarker(elementsToAdd, projection);
-        Log.d("MarkerHandler", "updateMarker: " + (System.currentTimeMillis() - t) + " for " + elementsToAdd.size() + " new Elements");
+        Log.i(LOG_NAME, "updateMarker: " + (System.currentTimeMillis() - t) + " for " + elementsToAdd.size() + " new Elements");
         m_startCase = false;
 
         //Is there another update waiting?
@@ -524,24 +560,88 @@ public abstract class A_Handler<T, U, V> {
      *
      * @param projection   of google map
      * @param markerMap    to be updated
-     * @param elements_vis list of elements which are visible
      * @return a set of I_SortableMapElement which have to be added to the map
      */
-    private Set<I_SortableMapElement> updateVisibleElements(T projection, Map<I_SortableMapElement, A_MapMarker> markerMap, List<I_SortableMapElement> elements_vis) {
+    private Set<I_SortableMapElement> updateVisibleElements(T projection, Map<I_SortableMapElement, A_MapMarker> markerMap) {
+        //This method is slow...
         Set<I_SortableMapElement> ret = new HashSet<>();
+        long t = System.currentTimeMillis();
         Map<I_SortableMapElement, Boolean> changedPictures = getVisibleElements(projection);
+        Log.i(LOG_NAME,"Detect visible elements in "+(System.currentTimeMillis()-t)+" ms");
         for (I_SortableMapElement element : changedPictures.keySet()) {
             if (changedPictures.get(element).equals(true)) {
                 markerMap.put(element, null); //new element
                 ret.add(element);
-                elements_vis.add(element);
+                m_elements_notOnMap.remove(element);
             } else {
                 A_MapMarker marker = markerMap.get(element);
                 marker.removeElement(element);
-                elements_vis.remove(element);
+                m_elements_notOnMap.add(element);
                 markerMap.remove(element); //element not visible any more
             }
         }
         return ret;
+    }
+    protected abstract boolean isInRegion(W bounds, LatLng place);
+
+    protected abstract W getVisibleRegion(T projection);
+
+    /**
+     * Estimates which elements are currently visible and compares this to the currently shown markers.
+     *
+     * @param projection of a google map
+     * @return a map with changed elements and a boolean indicating if element was added(=true) or removed(=false)
+     */
+    private Map<I_SortableMapElement, Boolean> getVisibleElements(T projection) {
+
+        Map<I_SortableMapElement, Boolean> ret = new HashMap<>();
+        W bounds = getVisibleRegion(projection);
+        for(I_SortableMapElement element:m_elements_notOnMap){
+            if(isInRegion(bounds,element.getLatLng())){
+                ret.put(element,true);
+            }
+        }
+        for(A_MapMarker marker:m_marker){
+            if(!isInRegion(bounds,marker.m_center)){
+                List<I_SortableMapElement> markerElements=marker.getElements();
+                for(I_SortableMapElement element: markerElements){
+                    if(!isInRegion(bounds,element.getLatLng())){
+                        ret.put(element,false);
+                    }
+                }
+            }
+        }
+        return ret;
+
+/*            Map<I_SortableMapElement, Boolean> ret = new HashMap<>();
+            LatLngBounds bounds = projection.getVisibleRegion().latLngBounds;
+            Map<A_MapMarker,Boolean> checkedMarker= new HashMap<A_MapMarker,Boolean>();
+            for (I_SortableMapElement element : m_elements) {
+                boolean isContained = false;
+                A_MapMarker marker = m_markerMap.get(element);
+                if (marker != null) {
+                    //It is displayed in a marker currently
+                    if (!checkedMarker.containsKey(marker)) {
+                        checkedMarker.put(marker, Boolean.valueOf(bounds.contains(new LatLngGoogleWrapper(marker.m_center).toOtherLatLng())));
+                    }
+                    isContained = checkedMarker.get(marker).booleanValue();
+                    if (isContained) {
+                        continue;
+                    }
+                    //Not contained -> remove
+                    ret.put(element, false);
+                    continue;
+                } else {
+                    //Elements, which are not represented as marker
+                    isContained = bounds.contains(new LatLngGoogleWrapper(element.getLatLng()).toOtherLatLng());
+                    if (isContained) {
+                        if (!element.getLatLng().equals(new LatLng(0, 0))) {
+                            ret.put(element, true);
+                        }
+                    }
+                }
+            }
+            return ret;*/
+
     }
 }
