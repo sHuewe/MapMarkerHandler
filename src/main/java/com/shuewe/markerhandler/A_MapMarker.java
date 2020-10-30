@@ -323,6 +323,7 @@ public abstract class A_MapMarker<T, S, U> {
         m_isTouched = true;
         if(isSelected){
             setColor(COLOR_SELECTED);
+            m_handler.setSelectedMarker(this);
         }
     }
 

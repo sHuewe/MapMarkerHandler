@@ -67,9 +67,10 @@ public class MapMarkerMapbox extends A_MapMarker<Symbol, SymbolManager, Projecti
             m_handler.m_markerOnMap.remove(m_marker);
             map.delete(m_marker);
         }
+        setColor(c);
         m_marker = map.create(new SymbolOptions()
                 .withLatLng(new com.mapbox.mapboxsdk.geometry.LatLng(m_center.latitude, m_center.longitude))
-                .withIconSize(1.2f)
+                .withIconSize(0.5f)
                 .withIconImage(m_markerId != null ? m_markerId : ID_MARKER_DEFAULT)
                 .withIconColor(COLOR_MAP.get(c)));
         m_handler.m_markerOnMap.put(m_marker, this);
@@ -99,5 +100,7 @@ public class MapMarkerMapbox extends A_MapMarker<Symbol, SymbolManager, Projecti
 
     @Override
     protected void updateMarker() {
+        m_marker.setIconColor(COLOR_MAP.get(getColor()));
+
     }
 }

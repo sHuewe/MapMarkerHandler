@@ -100,6 +100,7 @@ public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol, 
 
     @Override
     protected void updateSingleMarker(SymbolManager map,A_MapMarker marker){
+        marker.updateMarker();
         map.update(((MapMarkerMapbox)marker).m_marker);
     }
 

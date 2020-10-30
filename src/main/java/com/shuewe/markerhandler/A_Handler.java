@@ -127,6 +127,10 @@ public abstract class A_Handler<T, U, V, W> {
         registerClickListener();
     }
 
+    public void setSelectedMarker(A_MapMarker marker){
+        m_marked=marker;
+    }
+
     protected void handleClick(V marker){
         toggleMarker(m_markerOnMap.get(marker));
         m_markerClickListener.onMarkerClick(m_markerOnMap.get(marker));
@@ -143,8 +147,8 @@ public abstract class A_Handler<T, U, V, W> {
             Log.i(LOG_NAME, "reset old marker");// set old marked symbol
             m_markerOnMap.remove(m_marked.m_marker);
             m_marked.setColor(m_defaultColor);
-            m_markerOnMap.put(m_marked.m_marker, m_marked);
             updateSingleMarker(m_map,m_marked);
+            m_markerOnMap.put(m_marked.m_marker, m_marked);
             //m_map.update(m_marked);
         }
         if (!marker.equals(m_marked)) { //Set new marked symbol
@@ -152,10 +156,9 @@ public abstract class A_Handler<T, U, V, W> {
             m_defaultColor = marker.getColor();//symbol.getIconColor();
             m_markerOnMap.remove(marker.m_marker);
             marker.setColor(A_MapMarker.COLOR_SELECTED);
-            //symbol.setIconColor(Color.RED);
-            m_markerOnMap.put(marker.m_marker, marker);
             m_marked = marker;
             updateSingleMarker(m_map,m_marked);
+            m_markerOnMap.put(marker.m_marker, marker);
             //m_map.update(symbol);
         }
     }
