@@ -31,9 +31,9 @@
     <output-test url="file://$MODULE_DIR$/build/intermediates/javac/googleAndMapboxDebugUnitTest/compileGoogleAndMapboxDebugUnitTestJavaWithJavac/classes" />
     <exclude-output />
     <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/build/generated/source/buildConfig/googleAndMapbox/debug" isTestSource="false" generated="true" />
       <sourceFolder url="file://$MODULE_DIR$/build/generated/source/apt/googleAndMapbox/debug" isTestSource="false" generated="true" />
       <sourceFolder url="file://$MODULE_DIR$/build/generated/aidl_source_output_dir/googleAndMapboxDebug/compileGoogleAndMapboxDebugAidl/out" isTestSource="false" generated="true" />
-      <sourceFolder url="file://$MODULE_DIR$/build/generated/source/buildConfig/googleAndMapbox/debug" isTestSource="false" generated="true" />
       <sourceFolder url="file://$MODULE_DIR$/build/generated/renderscript_source_output_dir/googleAndMapboxDebug/compileGoogleAndMapboxDebugRenderscript/out" isTestSource="false" generated="true" />
       <sourceFolder url="file://$MODULE_DIR$/build/generated/res/rs/googleAndMapbox/debug" type="java-resource" generated="true" />
       <sourceFolder url="file://$MODULE_DIR$/build/generated/res/resValues/googleAndMapbox/debug" type="java-resource" generated="true" />
@@ -45,9 +45,9 @@
       <sourceFolder url="file://$MODULE_DIR$/src/googleAndMapboxDebug/rs" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/googleAndMapboxDebug/shaders" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/build/generated/source/apt/androidTest/googleAndMapbox/debug" isTestSource="true" generated="true" />
+      <sourceFolder url="file://$MODULE_DIR$/build/generated/renderscript_source_output_dir/googleAndMapboxDebugAndroidTest/compileGoogleAndMapboxDebugAndroidTestRenderscript/out" isTestSource="true" generated="true" />
       <sourceFolder url="file://$MODULE_DIR$/build/generated/aidl_source_output_dir/googleAndMapboxDebugAndroidTest/compileGoogleAndMapboxDebugAndroidTestAidl/out" isTestSource="true" generated="true" />
       <sourceFolder url="file://$MODULE_DIR$/build/generated/source/buildConfig/androidTest/googleAndMapbox/debug" isTestSource="true" generated="true" />
-      <sourceFolder url="file://$MODULE_DIR$/build/generated/renderscript_source_output_dir/googleAndMapboxDebugAndroidTest/compileGoogleAndMapboxDebugAndroidTestRenderscript/out" isTestSource="true" generated="true" />
       <sourceFolder url="file://$MODULE_DIR$/build/generated/res/rs/androidTest/googleAndMapbox/debug" type="java-test-resource" generated="true" />
       <sourceFolder url="file://$MODULE_DIR$/build/generated/res/resValues/androidTest/googleAndMapbox/debug" type="java-test-resource" generated="true" />
       <sourceFolder url="file://$MODULE_DIR$/src/androidTestGoogleAndMapboxDebug/res" type="java-test-resource" />
