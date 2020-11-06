@@ -11,6 +11,7 @@
 package com.shuewe.markerhandler;
 
 import android.app.Activity;
+import android.content.Context;
 import android.graphics.Color;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -22,13 +23,17 @@ import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLngBounds;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.Projection;
+import com.mapbox.mapboxsdk.maps.Style;
 import com.mapbox.mapboxsdk.plugins.annotation.OnSymbolClickListener;
 import com.mapbox.mapboxsdk.plugins.annotation.Symbol;
 import com.mapbox.mapboxsdk.plugins.annotation.SymbolManager;
+import com.mapbox.mapboxsdk.utils.BitmapUtils;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.shuewe.markerhandler.MapMarkerMapbox.ID_MARKER_DEFAULT;
 
 /**
  * Implementation of A_Handler for mapbox
@@ -196,5 +201,10 @@ public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol, 
         return projection.getVisibleRegion().latLngBounds;
     }
 
+    public static void registerIcons(Context context, Style style){
+        style.addImage(ID_MARKER_DEFAULT,
+                BitmapUtils.getBitmapFromDrawable(context.getResources().getDrawable(R.drawable.marker_blue)),
+                true);
+    }
 
 }

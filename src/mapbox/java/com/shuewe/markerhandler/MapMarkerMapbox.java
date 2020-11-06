@@ -70,7 +70,7 @@ public class MapMarkerMapbox extends A_MapMarker<Symbol, SymbolManager, Projecti
         setColor(c);
         m_marker = map.create(new SymbolOptions()
                 .withLatLng(new com.mapbox.mapboxsdk.geometry.LatLng(m_center.latitude, m_center.longitude))
-                .withIconSize(0.5f)
+                .withIconSize(0.3f)
                 .withIconImage(m_markerId != null ? m_markerId : ID_MARKER_DEFAULT)
                 .withIconColor(COLOR_MAP.get(c)));
         m_handler.m_markerOnMap.put(m_marker, this);

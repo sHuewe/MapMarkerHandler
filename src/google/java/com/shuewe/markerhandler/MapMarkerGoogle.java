@@ -10,6 +10,8 @@
 
 package com.shuewe.markerhandler;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Point;
 
 import com.google.android.gms.maps.GoogleMap;
@@ -28,14 +30,16 @@ import java.util.Map;
 
 public class MapMarkerGoogle extends A_MapMarker<Marker, GoogleMap, Projection> {
 
+    private double m_scale=0.3;
+
     /**
      * Map tp define A_Marker.COLOR values for marker from google.
      */
-    Map<COLOR, BitmapDescriptor> COLOR_MAP = new HashMap<COLOR, BitmapDescriptor>() {{
-        put(COLOR.BLUE, BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE));
-        put(COLOR.RED, BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
-        put(COLOR.GREEN, BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN));
-        put(COLOR.YELLOW, BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW));
+    Map<COLOR, Integer> COLOR_MAP = new HashMap<COLOR, Integer>() {{
+        put(COLOR.BLUE, R.drawable.marker_blue);
+        put(COLOR.RED, R.drawable.marker_red);
+        put(COLOR.GREEN, R.drawable.marker_green);
+        put(COLOR.YELLOW, R.drawable.marker_yellow);
     }};
 
     /**
@@ -66,7 +70,7 @@ public class MapMarkerGoogle extends A_MapMarker<Marker, GoogleMap, Projection> 
             m_handler.m_markerOnMap.remove(m_marker);
             m_marker.remove();
         }
-        MarkerOptions options=new MarkerOptions().position(new LatLngGoogleWrapper(m_center).toOtherLatLng()).icon(COLOR_MAP.get(c));
+        MarkerOptions options=new MarkerOptions().position(new LatLngGoogleWrapper(m_center).toOtherLatLng()).icon(getScaledIcon(c,m_scale));
         setColor(c);
         if(m_textGenerator.getMarkerTitle(getElements(),m_cursor)!=null){
             options=options.title(m_textGenerator.getMarkerTitle(getElements(),m_cursor)).snippet(m_textGenerator.getMarkerDescription(getElements(),m_cursor));
@@ -76,12 +80,18 @@ public class MapMarkerGoogle extends A_MapMarker<Marker, GoogleMap, Projection> 
         return m_marker;
     }
 
+    private BitmapDescriptor getScaledIcon(COLOR c, double scale) {
+        Bitmap b = BitmapFactory.decodeResource(m_handler.getContext().getResources(), COLOR_MAP.get(c));
+        Bitmap scaledBitmap = Bitmap.createScaledBitmap(b, (int)(b.getWidth()*scale), (int)(b.getHeight()*scale), false);
+        return BitmapDescriptorFactory.fromBitmap(scaledBitmap);
+    }
+
     @Override
     protected void updateMarker() {
         if (m_marker != null && m_textGenerator.getMarkerTitle(getElements(),m_cursor)!=null) {
             m_marker.setTitle(m_textGenerator.getMarkerTitle(getElements(),m_cursor));
             m_marker.setSnippet(m_textGenerator.getMarkerDescription(getElements(),m_cursor));
         }
-        m_marker.setIcon(COLOR_MAP.get(getColor()));
+        m_marker.setIcon(getScaledIcon(getColor(),m_scale));
     }
 }

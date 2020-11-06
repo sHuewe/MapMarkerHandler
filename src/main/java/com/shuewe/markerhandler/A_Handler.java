@@ -122,6 +122,10 @@ public abstract class A_Handler<T, U, V, W> {
      */
     protected DisplayMetrics m_metrics;
 
+    public Context getContext(){
+        return m_context;
+    }
+
     public void setOnMarkerClickListener(OnMarkerClickListener listener){
         m_markerClickListener=listener;
         registerClickListener();
