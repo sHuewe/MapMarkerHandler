@@ -12,7 +12,6 @@ package com.shuewe.markerhandler;
 
 import android.app.Activity;
 import android.content.Context;
-import android.graphics.Color;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
@@ -29,9 +28,7 @@ import com.mapbox.mapboxsdk.plugins.annotation.Symbol;
 import com.mapbox.mapboxsdk.plugins.annotation.SymbolManager;
 import com.mapbox.mapboxsdk.utils.BitmapUtils;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static com.shuewe.markerhandler.MapMarkerMapbox.ID_MARKER_DEFAULT;
 
@@ -52,8 +49,9 @@ public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol, 
     private TextView m_textView;
 
     @Override
-    public void onAnnotationClick(Symbol symbol) {
+    public boolean onAnnotationClick(Symbol symbol) {
         handleClick(symbol);
+        return false;
     }
 
 

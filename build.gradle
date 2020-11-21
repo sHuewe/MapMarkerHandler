@@ -55,8 +55,8 @@ dependencies {
 
     mapboxImplementation 'com.mapbox.mapboxsdk:mapbox-android-sdk:9.5.0'
     mapboxImplementation 'com.mapbox.mapboxsdk:mapbox-android-plugin-annotation-v9:0.9.0'
-    googleAndMapboxImplementation 'com.mapbox.mapboxsdk:mapbox-android-sdk:8.5.0'
-    googleAndMapboxImplementation 'com.mapbox.mapboxsdk:mapbox-android-plugin-annotation-v8:0.7.0'
+    googleAndMapboxImplementation 'com.mapbox.mapboxsdk:mapbox-android-sdk:9.5.0'
+    googleAndMapboxImplementation 'com.mapbox.mapboxsdk:mapbox-android-plugin-annotation-v9:0.9.0'
     // Unit testing dependencies
     testImplementation 'junit:junit:4.12'
     implementation fileTree(include: ['*.jar'], dir: 'libs')
