@@ -28,19 +28,9 @@ import java.util.Map;
  * Implementation of A_MapMarker for google maps.
  */
 
-public class MapMarkerGoogle extends A_MapMarker<Marker, GoogleMap, Projection> {
+public class MapMarkerGoogle extends A_MapMarker<Marker, GoogleMap, Projection, Integer> {
 
     private double m_scale=0.3;
-
-    /**
-     * Map tp define A_Marker.COLOR values for marker from google.
-     */
-    Map<COLOR, Integer> COLOR_MAP = new HashMap<COLOR, Integer>() {{
-        put(COLOR.BLUE, R.drawable.marker_blue);
-        put(COLOR.RED, R.drawable.marker_red);
-        put(COLOR.GREEN, R.drawable.marker_green);
-        put(COLOR.YELLOW, R.drawable.marker_yellow);
-    }};
 
     /**
      * Public constructor.
@@ -50,6 +40,7 @@ public class MapMarkerGoogle extends A_MapMarker<Marker, GoogleMap, Projection> 
     public MapMarkerGoogle(A_Handler handler, MarkerTextGenerator textGenerator) {
         super(handler,textGenerator);
     }
+
 
     @Override
     public A_MapMarker getInstance() {
@@ -81,7 +72,7 @@ public class MapMarkerGoogle extends A_MapMarker<Marker, GoogleMap, Projection> 
     }
 
     private BitmapDescriptor getScaledIcon(COLOR c, double scale) {
-        Bitmap b = BitmapFactory.decodeResource(m_handler.getContext().getResources(), COLOR_MAP.get(c));
+        Bitmap b = BitmapFactory.decodeResource(m_handler.getContext().getResources(), (Integer) m_handler.getColorMap().get(c));
         Bitmap scaledBitmap = Bitmap.createScaledBitmap(b, (int)(b.getWidth()*scale), (int)(b.getHeight()*scale), false);
         return BitmapDescriptorFactory.fromBitmap(scaledBitmap);
     }

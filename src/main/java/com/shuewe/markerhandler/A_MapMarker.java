@@ -25,8 +25,9 @@ import java.util.UUID;
  * @param <T> The marker class created on the map
  * @param <S> The object, to add the marker of type T to, eg. GoogleMap (google) or Symbol (mapbox)
  * @param <U> Projection class
+ * @param <V> Switch for icon color, Color-String for mapbox, colored drawable id for others
  */
-public abstract class A_MapMarker<T, S, U> {
+public abstract class A_MapMarker<T, S, U, V> {
 
     /**
      * Center of marker.
@@ -69,10 +70,8 @@ public abstract class A_MapMarker<T, S, U> {
 
 
 
-    public static final COLOR COLOR_SELECTED=COLOR.RED;
-    public static final COLOR COLOR_DEFAULT=COLOR.BLUE;
 
-    private COLOR m_color=COLOR_DEFAULT;
+    private COLOR m_color;
 
     /**
      * Info title.
@@ -86,6 +85,7 @@ public abstract class A_MapMarker<T, S, U> {
      */
     public A_MapMarker(A_Handler handler, MarkerTextGenerator textGenerator) {
         m_id=UUID.randomUUID();
+        m_color=handler.getDefaultColor();
         m_handler = handler;
         m_textGenerator=textGenerator;
     }
@@ -314,15 +314,15 @@ public abstract class A_MapMarker<T, S, U> {
      * @param markerList to be added
      */
     private void addMarker(List<A_MapMarker> markerList) {
-        boolean isSelected=getColor().equals(COLOR_SELECTED);
+        boolean isSelected=getColor().equals(m_handler.getActiveColor());
         for (A_MapMarker marker : markerList) {
-            isSelected = isSelected || marker.getColor().equals(COLOR_SELECTED);
+            isSelected = isSelected || marker.getColor().equals(m_handler.getActiveColor());
             addElements(marker.getElements());
             marker.removeAll();
         }
         m_isTouched = true;
         if(isSelected){
-            setColor(COLOR_SELECTED);
+            setColor(m_handler.getActiveColor());
             m_handler.setSelectedMarker(this);
         }
     }

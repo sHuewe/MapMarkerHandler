@@ -26,21 +26,9 @@ import java.util.Map;
 /**
  * Implementation of A_MapMarker for mapbox
  */
-public class MapMarkerMapbox extends A_MapMarker<Symbol, SymbolManager, Projection> {
+public class MapMarkerMapbox extends A_MapMarker<Symbol, SymbolManager, Projection, String> {
 
-    /**
-     * Default marker id.
-     */
-    public static final String ID_MARKER_DEFAULT = "markerhandler_marker";
-    /**
-     * Map to bind A_MapMarker.COLOR values to color values suitable for mapbox.
-     */
-    Map<COLOR, String> COLOR_MAP = new HashMap<COLOR, String>() {{
-        put(COLOR.BLUE, ColorUtils.colorToRgbaString(Color.BLUE));
-        put(COLOR.RED, ColorUtils.colorToRgbaString(Color.RED));
-        put(COLOR.GREEN, ColorUtils.colorToRgbaString(Color.GREEN));
-        put(COLOR.YELLOW, ColorUtils.colorToRgbaString(Color.YELLOW));
-    }};
+
     /**
      * Custom set marker ID.
      */
@@ -53,7 +41,9 @@ public class MapMarkerMapbox extends A_MapMarker<Symbol, SymbolManager, Projecti
      */
     public MapMarkerMapbox(A_Handler handler, MarkerTextGenerator textGenerator) {
         super(handler,textGenerator);
+        m_markerId=((HandlerMapbox)handler).getMarkerID();
     }
+
 
     @Override
     public A_MapMarker getInstance() {
@@ -70,9 +60,10 @@ public class MapMarkerMapbox extends A_MapMarker<Symbol, SymbolManager, Projecti
         setColor(c);
         m_marker = map.create(new SymbolOptions()
                 .withLatLng(new com.mapbox.mapboxsdk.geometry.LatLng(m_center.latitude, m_center.longitude))
-                .withIconSize(0.3f)
-                .withIconImage(m_markerId != null ? m_markerId : ID_MARKER_DEFAULT)
-                .withIconColor(COLOR_MAP.get(c)));
+                .withIconSize(0.35f)
+                .withIconOffset(new Float[]{0f,0.175f})
+                .withIconImage(m_markerId)
+                .withIconColor((String)m_handler.getColorMap().get(c)));
         m_handler.m_markerOnMap.put(m_marker, this);
         return m_marker;
     }
@@ -100,7 +91,7 @@ public class MapMarkerMapbox extends A_MapMarker<Symbol, SymbolManager, Projecti
 
     @Override
     protected void updateMarker() {
-        m_marker.setIconColor(COLOR_MAP.get(getColor()));
+        m_marker.setIconColor((String)m_handler.getColorMap().get(getColor()));
 
     }
 }

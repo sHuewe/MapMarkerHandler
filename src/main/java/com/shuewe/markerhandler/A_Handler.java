@@ -33,10 +33,13 @@ import java.util.Set;
  * @param <U> Object which allows the creation of an marker on the map, e.g. the GoogleMap class
  * @param <V> Marker object, e.g. com.google.android.gms.maps.model.Marker (google) or com.mapbox.mapboxsdk.plugins.annotation.Symbol (mapbox)
  * @param <W> LatLng Bounds
+ * @param <X> Color specify class (String for mapbox, Integer id for others)
  */
-public abstract class A_Handler<T, U, V, W> {
+public abstract class A_Handler<T, U, V, W, X> {
 
     static final String LOG_NAME="MapMarkerHandler";
+
+    protected static List<A_Handler> listener= new ArrayList<A_Handler>();
 
     /**
      * Default min distance.
@@ -61,7 +64,14 @@ public abstract class A_Handler<T, U, V, W> {
     /**
      * The default color.
      */
-    protected A_MapMarker.COLOR m_defaultColor;
+    protected A_MapMarker.COLOR m_defaultColor=A_MapMarker.COLOR.BLUE;
+
+    private W m_queueBounds;
+
+    /**
+     * The active color.
+     */
+    protected A_MapMarker.COLOR m_activeColor=A_MapMarker.COLOR.RED;
     /**
      * Map to find marker object from given marker. Used to handle click events.
      */
@@ -122,12 +132,21 @@ public abstract class A_Handler<T, U, V, W> {
      */
     protected DisplayMetrics m_metrics;
 
+    public A_MapMarker.COLOR getActiveColor(){
+        return m_activeColor;
+    }
+
     public Context getContext(){
         return m_context;
     }
 
-    public void setOnMarkerClickListener(OnMarkerClickListener listener){
-        m_markerClickListener=listener;
+    public  A_MapMarker.COLOR getDefaultColor(){
+        return m_defaultColor;
+    }
+
+    public void setOnMarkerClickListener(OnMarkerClickListener l){
+        m_markerClickListener=l;
+        listener.add(this);
         registerClickListener();
     }
 
@@ -135,9 +154,36 @@ public abstract class A_Handler<T, U, V, W> {
         m_marked=marker;
     }
 
-    protected void handleClick(V marker){
+    protected boolean handleClick(V marker){
+        if(marker==null || !m_markerOnMap.containsKey(marker)){
+            resetMarkedMarker();
+            return false;
+        }
         toggleMarker(m_markerOnMap.get(marker));
         m_markerClickListener.onMarkerClick(m_markerOnMap.get(marker));
+        return false;
+    }
+
+    public void setDefaultColor(A_MapMarker.COLOR c){
+        this.m_defaultColor=c;
+    }
+
+    public void setActiveColor(A_MapMarker.COLOR c){
+        this.m_activeColor=c;
+    }
+
+    private void resetMarkedMarker(){
+        if(m_marked==null){
+            return;
+        }
+        Log.i(LOG_NAME, "reset old marker");// set old marked symbol
+        if(m_markerOnMap.containsKey(m_marked.m_marker)) {
+            m_markerOnMap.remove(m_marked.m_marker);
+            m_marked.setColor(m_defaultColor);
+            updateSingleMarker(m_map, m_marked);
+            m_markerOnMap.put(m_marked.m_marker, m_marked);
+        }
+        m_marked=null;
     }
 
     public void toggleMarker(A_MapMarker marker){
@@ -147,19 +193,14 @@ public abstract class A_Handler<T, U, V, W> {
             markedId=m_marked.getID().toString();
         }
         Log.i(LOG_NAME, "Current marker:"+ markedId);
-        if (m_marked != null && !marker.equals(m_marked) && m_markerOnMap.containsKey(m_marked.m_marker)) { //Re
-            Log.i(LOG_NAME, "reset old marker");// set old marked symbol
-            m_markerOnMap.remove(m_marked.m_marker);
-            m_marked.setColor(m_defaultColor);
-            updateSingleMarker(m_map,m_marked);
-            m_markerOnMap.put(m_marked.m_marker, m_marked);
-            //m_map.update(m_marked);
+        if (m_marked != null && !marker.equals(m_marked)) { //Re
+            resetMarkedMarker();
         }
-        if (!marker.equals(m_marked)) { //Set new marked symbol
+        if (!marker.getID().equals(markedId)) { //Set new marked symbol
             Log.i(LOG_NAME, "Set new marked marker");
             m_defaultColor = marker.getColor();//symbol.getIconColor();
             m_markerOnMap.remove(marker.m_marker);
-            marker.setColor(A_MapMarker.COLOR_SELECTED);
+            marker.setColor(m_activeColor);
             m_marked = marker;
             updateSingleMarker(m_map,m_marked);
             m_markerOnMap.put(marker.m_marker, marker);
@@ -167,8 +208,18 @@ public abstract class A_Handler<T, U, V, W> {
         }
     }
 
+    abstract Map<A_MapMarker.COLOR,X> getColorMap();
+
+    public void addColor(A_MapMarker.COLOR c, X draw){
+            getColorMap().put(c,draw);
+
+    }
+
     protected abstract void updateSingleMarker(U map,A_MapMarker m_marked);
 
+    /**
+     * Registers current click listener, and handle to have only current listener attached (if needed)
+     */
     protected abstract void registerClickListener();
 
     protected MarkerTextGenerator m_textGenerator=new MarkerTextGenerator() {
@@ -415,12 +466,13 @@ public abstract class A_Handler<T, U, V, W> {
             setQueue(projection, zoom);
             return;
         }
+        W bounds = getVisibleRegion(projection);
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
                 long t = System.currentTimeMillis();
                 Log.i(LOG_NAME, "start calculation");
-                updateMap(projection, zoom);
+                updateMap(projection,bounds, zoom);
                 Log.i(LOG_NAME, "Calculation ready, send to ui thread: " + (System.currentTimeMillis() - t));
                 ((Activity) m_context).runOnUiThread(new Runnable() {
                     @Override
@@ -507,6 +559,7 @@ public abstract class A_Handler<T, U, V, W> {
      */
     protected void setQueue(T projection, float zoom) {
         m_queueProjection = projection;
+        m_queueBounds= getVisibleRegion(projection);
         m_queueZoom = zoom;
         m_queuePending = true;
     }
@@ -519,11 +572,12 @@ public abstract class A_Handler<T, U, V, W> {
      * @param projection of google map
      * @param zoom       of google map
      */
-    protected void updateMap(T projection, float zoom) {
+    protected void updateMap(T projection, W bounds, float zoom) {
         m_queueProjection = null;
+        m_queueBounds=null;
         m_isBusy = true;
         long t = System.currentTimeMillis();
-        Set<I_SortableMapElement> elementsToAdd = updateVisibleElements(projection, m_markerMap);
+        Set<I_SortableMapElement> elementsToAdd = updateVisibleElements(projection,bounds, m_markerMap);
         Log.i(LOG_NAME, "updateVisibleElements: " + (System.currentTimeMillis() - t));
         if (m_startCase) {
             m_mapZoom = zoom;
@@ -545,7 +599,7 @@ public abstract class A_Handler<T, U, V, W> {
         //Is there another update waiting?
         if (m_queuePending) {
             m_queuePending = false;
-            updateMap(m_queueProjection, m_queueZoom);
+            updateMap(m_queueProjection,m_queueBounds, m_queueZoom);
         }
         m_isBusy = false;
     }
@@ -569,11 +623,11 @@ public abstract class A_Handler<T, U, V, W> {
      * @param markerMap    to be updated
      * @return a set of I_SortableMapElement which have to be added to the map
      */
-    private Set<I_SortableMapElement> updateVisibleElements(T projection, Map<I_SortableMapElement, A_MapMarker> markerMap) {
+    private Set<I_SortableMapElement> updateVisibleElements(T projection,W bounds, Map<I_SortableMapElement, A_MapMarker> markerMap) {
         //This method is slow...
         Set<I_SortableMapElement> ret = new HashSet<>();
         long t = System.currentTimeMillis();
-        Map<I_SortableMapElement, Boolean> changedPictures = getVisibleElements(projection);
+        Map<I_SortableMapElement, Boolean> changedPictures = getVisibleElements(bounds);
         Log.i(LOG_NAME,"Detect visible elements in "+(System.currentTimeMillis()-t)+" ms");
         for (I_SortableMapElement element : changedPictures.keySet()) {
             if (changedPictures.get(element).equals(true)) {
@@ -596,13 +650,13 @@ public abstract class A_Handler<T, U, V, W> {
     /**
      * Estimates which elements are currently visible and compares this to the currently shown markers.
      *
-     * @param projection of a google map
+     * @param bounds of a google map
      * @return a map with changed elements and a boolean indicating if element was added(=true) or removed(=false)
      */
-    private Map<I_SortableMapElement, Boolean> getVisibleElements(T projection) {
+    private Map<I_SortableMapElement, Boolean> getVisibleElements(W bounds) {
 
         Map<I_SortableMapElement, Boolean> ret = new HashMap<>();
-        W bounds = getVisibleRegion(projection);
+
         for(I_SortableMapElement element:m_elements_notOnMap){
             if(isInRegion(bounds,element.getLatLng())){
                 ret.put(element,true);

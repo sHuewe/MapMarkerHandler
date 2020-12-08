@@ -12,6 +12,7 @@ package com.shuewe.markerhandler;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Color;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
@@ -27,16 +28,32 @@ import com.mapbox.mapboxsdk.plugins.annotation.OnSymbolClickListener;
 import com.mapbox.mapboxsdk.plugins.annotation.Symbol;
 import com.mapbox.mapboxsdk.plugins.annotation.SymbolManager;
 import com.mapbox.mapboxsdk.utils.BitmapUtils;
+import com.mapbox.mapboxsdk.utils.ColorUtils;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-import static com.shuewe.markerhandler.MapMarkerMapbox.ID_MARKER_DEFAULT;
 
 /**
  * Implementation of A_Handler for mapbox
  */
-public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol, LatLngBounds> implements OnSymbolClickListener {
+public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol, LatLngBounds,String> implements OnSymbolClickListener {
 
+
+    private String m_markerId="marker-id_0";
+
+    private static OnSymbolClickListener currentClickListener=null;
+
+    /**
+     * Map to bind A_MapMarker.COLOR values to color values suitable for mapbox.
+     */
+    Map<A_MapMarker.COLOR, String> COLOR_MAP = new HashMap<A_MapMarker.COLOR, String>() {{
+        put(A_MapMarker.COLOR.BLUE, ColorUtils.colorToRgbaString(Color.BLUE));
+        put(A_MapMarker.COLOR.RED, ColorUtils.colorToRgbaString(Color.RED));
+        put(A_MapMarker.COLOR.GREEN, "#05844D");
+        put(A_MapMarker.COLOR.YELLOW, ColorUtils.colorToRgbaString(Color.YELLOW));
+    }};
 
     /**
      * Map instance, only needed for the sortable elements option (to move camera), has to be set by setter if needed
@@ -50,14 +67,21 @@ public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol, 
 
     @Override
     public boolean onAnnotationClick(Symbol symbol) {
-        handleClick(symbol);
+        for(A_Handler h:listener){
+            h.handleClick(symbol);
+        }
         return false;
     }
 
 
     @Override
     protected void registerClickListener() {
+
+        if(currentClickListener !=null){
+            m_map.removeClickListener(currentClickListener);
+        }
         m_map.addClickListener(this);
+        currentClickListener=this;
     }
 
     /**
@@ -99,6 +123,11 @@ public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol, 
             m_textView.setText(text);
             m_textView.setVisibility(View.VISIBLE);
         }
+    }
+
+    @Override
+    Map getColorMap() {
+        return COLOR_MAP;
     }
 
     @Override
@@ -157,6 +186,7 @@ public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol, 
         m_mapIntance.animateCamera(CameraUpdateFactory.newCameraPosition(position));
     }
 
+    //TODO In der Methode lassen wir alles im main thread laufen, weil pixelForLatLng nicht im Hintergrund funktioniert.. Eigene implementierung der Funktion sollte das lösen können
     @Override
     public void updateMarkerOnMap(final Projection projection, final float zoom) {
         if (m_isBusy) {
@@ -171,7 +201,7 @@ public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol, 
                     @Override
                     public void run() {
                         long t = System.currentTimeMillis();
-                        updateMap(projection, zoom);
+                        updateMap(projection,getVisibleRegion(projection), zoom);
                         Log.d("MarkerHandler", "updateMap: " + (System.currentTimeMillis() - t));
                         t = System.currentTimeMillis();
                         drawOnMap();
@@ -199,10 +229,19 @@ public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol, 
         return projection.getVisibleRegion().latLngBounds;
     }
 
-    public static void registerIcons(Context context, Style style){
-        style.addImage(ID_MARKER_DEFAULT,
-                BitmapUtils.getBitmapFromDrawable(context.getResources().getDrawable(R.drawable.marker_blue)),
+    public void registerIcons(Context context, Style style){
+            registerIcons(context,style,R.drawable.marker_blue);
+    }
+
+    public void registerIcons(Context context, Style style,Integer drawable){
+        m_markerId=m_markerId+drawable;
+        style.addImage(m_markerId,
+                BitmapUtils.getBitmapFromDrawable(context.getResources().getDrawable(drawable)),
                 true);
+    }
+
+    String getMarkerID(){
+        return m_markerId;
     }
 
 }

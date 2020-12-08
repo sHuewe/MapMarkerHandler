@@ -19,6 +19,7 @@ import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,13 +27,31 @@ import java.util.Map;
 /**
  * Implementation of A_Handler for maps from google.
  */
-public class HandlerGoogle extends A_Handler<Projection, GoogleMap, Marker, com.google.android.gms.maps.model.LatLngBounds> implements GoogleMap.OnMarkerClickListener {
+public class HandlerGoogle extends A_Handler<Projection, GoogleMap, Marker, com.google.android.gms.maps.model.LatLngBounds,Integer> implements GoogleMap.OnMarkerClickListener {
+
+
+
+    private Map<A_MapMarker.COLOR, Integer>COLOR_MAP=new HashMap<A_MapMarker.COLOR, Integer>() {{
+        put(A_MapMarker.COLOR.BLUE, R.drawable.marker_blue);
+        put(A_MapMarker.COLOR.RED, R.drawable.marker_red);
+        put(A_MapMarker.COLOR.GREEN, R.drawable.marker_green);
+        put(A_MapMarker.COLOR.YELLOW, R.drawable.marker_yellow);
+    }};
 
     @Override
     public boolean onMarkerClick(Marker marker) {
-        handleClick(marker);
+        for(A_Handler h:listener){
+            h.handleClick(marker);
+        }
         return false;
     }
+
+    @Override
+    Map<A_MapMarker.COLOR, Integer> getColorMap() {
+        return COLOR_MAP;
+    }
+
+
 
     @Override
     protected void updateSingleMarker(GoogleMap map, A_MapMarker marker) {
@@ -42,6 +61,7 @@ public class HandlerGoogle extends A_Handler<Projection, GoogleMap, Marker, com.
     @Override
     protected void registerClickListener() {
         m_map.setOnMarkerClickListener(this);
+
     }
 
     /**
