@@ -11,6 +11,7 @@
 package com.shuewe.markerhandler;
 
 import android.app.Activity;
+import android.content.Context;
 import android.util.DisplayMetrics;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -80,11 +81,6 @@ public class HandlerGoogle extends A_Handler<Projection, GoogleMap, Marker, com.
             m_markerOnMap.remove(marker);
             marker.remove();
         }
-    }
-
-    @Override
-    public void init(Activity context, GoogleMap map) {
-        super.init(context, map);
     }
 
     @Override

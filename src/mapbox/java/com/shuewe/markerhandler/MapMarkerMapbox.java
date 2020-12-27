@@ -60,8 +60,8 @@ public class MapMarkerMapbox extends A_MapMarker<Symbol, SymbolManager, Projecti
         setColor(c);
         m_marker = map.create(new SymbolOptions()
                 .withLatLng(new com.mapbox.mapboxsdk.geometry.LatLng(m_center.latitude, m_center.longitude))
-                .withIconSize(0.35f)
-                .withIconOffset(new Float[]{0f,0.175f})
+                .withIconSize((float) (0.35f*m_handler.getMarkerSizeFactor()))
+                .withIconOffset(new Float[]{0f,-30f})
                 .withIconImage(m_markerId)
                 .withIconColor((String)m_handler.getColorMap().get(c)));
         m_handler.m_markerOnMap.put(m_marker, this);
@@ -84,9 +84,10 @@ public class MapMarkerMapbox extends A_MapMarker<Symbol, SymbolManager, Projecti
     protected double getPixelDistance(LatLng pos2, Projection projection) {
         Log.d("p1", m_center.toString());
         Log.d("p2", pos2.toString());
-        PointF p1 = projection.toScreenLocation(new LatLngMapboxWrapper(m_center).toOtherLatLng());
-        PointF p2 = projection.toScreenLocation(new LatLngMapboxWrapper(pos2).toOtherLatLng());
-        return Math.sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y));
+        MercatorProjection p = ((HandlerMapbox)m_handler).getMercatorProjection();
+        MercatorProjection.Coordinates c1 = p.getCoordinates(m_center);
+        MercatorProjection.Coordinates c2 = p.getCoordinates(pos2);
+        return Math.sqrt((c1.getX()-c2.getX())*(c1.getX()-c2.getX())+(c1.getY()-c2.getY())*(c1.getY()-c2.getY()));
     }
 
     @Override

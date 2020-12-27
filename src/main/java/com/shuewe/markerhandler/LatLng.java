@@ -18,12 +18,12 @@ public class LatLng {
     /**
      * The latitude value.
      */
-    public final double latitude;
+    public double latitude;
 
     /**
      * The longitude value.
      */
-    public final double longitude;
+    public double longitude;
 
     /**
      * The public constructor.
@@ -52,6 +52,14 @@ public class LatLng {
         hash = 31 * hash + Double.valueOf(latitude).hashCode();
         hash = 31 * hash + Double.valueOf(longitude).hashCode();
         return hash;
+    }
+
+    public void setLat(double latitude) {
+        this.latitude=latitude;
+    }
+
+    public void setLng(double lng){
+        this.longitude=lng;
     }
 
     @Override

@@ -30,7 +30,7 @@ import java.util.Map;
 
 public class MapMarkerGoogle extends A_MapMarker<Marker, GoogleMap, Projection, Integer> {
 
-    private double m_scale=0.3;
+    private double m_scale=0.35;
 
     /**
      * Public constructor.
@@ -61,7 +61,7 @@ public class MapMarkerGoogle extends A_MapMarker<Marker, GoogleMap, Projection, 
             m_handler.m_markerOnMap.remove(m_marker);
             m_marker.remove();
         }
-        MarkerOptions options=new MarkerOptions().position(new LatLngGoogleWrapper(m_center).toOtherLatLng()).icon(getScaledIcon(c,m_scale));
+        MarkerOptions options=new MarkerOptions().position(new LatLngGoogleWrapper(m_center).toOtherLatLng()).icon(getScaledIcon(c,m_scale*m_handler.getMarkerSizeFactor()));
         setColor(c);
         if(m_textGenerator.getMarkerTitle(getElements(),m_cursor)!=null){
             options=options.title(m_textGenerator.getMarkerTitle(getElements(),m_cursor)).snippet(m_textGenerator.getMarkerDescription(getElements(),m_cursor));
@@ -79,10 +79,11 @@ public class MapMarkerGoogle extends A_MapMarker<Marker, GoogleMap, Projection, 
 
     @Override
     protected void updateMarker() {
+
         if (m_marker != null && m_textGenerator.getMarkerTitle(getElements(),m_cursor)!=null) {
             m_marker.setTitle(m_textGenerator.getMarkerTitle(getElements(),m_cursor));
             m_marker.setSnippet(m_textGenerator.getMarkerDescription(getElements(),m_cursor));
         }
-        m_marker.setIcon(getScaledIcon(getColor(),m_scale));
+        m_marker.setIcon(getScaledIcon(getColor(),m_scale*m_handler.getMarkerSizeFactor()));
     }
 }

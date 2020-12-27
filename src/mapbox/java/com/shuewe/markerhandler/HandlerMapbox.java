@@ -43,6 +43,10 @@ public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol, 
 
     private String m_markerId="marker-id_0";
 
+    private MercatorProjection m_mercatorProjection;
+
+    private MercatorProjection m_queueMercatorProjection;
+
     private static OnSymbolClickListener currentClickListener=null;
 
     /**
@@ -52,7 +56,7 @@ public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol, 
         put(A_MapMarker.COLOR.BLUE, ColorUtils.colorToRgbaString(Color.BLUE));
         put(A_MapMarker.COLOR.RED, ColorUtils.colorToRgbaString(Color.RED));
         put(A_MapMarker.COLOR.GREEN, "#05844D");
-        put(A_MapMarker.COLOR.YELLOW, ColorUtils.colorToRgbaString(Color.YELLOW));
+        put(A_MapMarker.COLOR.YELLOW, "#FFB407");
     }};
 
     /**
@@ -72,6 +76,7 @@ public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol, 
         }
         return false;
     }
+
 
 
     @Override
@@ -144,7 +149,7 @@ public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol, 
      * @param symbolManager to set markers
      * @param mapInstance   instance of the map
      */
-    public void init(Activity context, SymbolManager symbolManager, MapboxMap mapInstance) {
+    public void init(Context context, SymbolManager symbolManager, MapboxMap mapInstance) {
         init(context, symbolManager);
         m_mapIntance = mapInstance;
     }
@@ -191,27 +196,21 @@ public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol, 
     public void updateMarkerOnMap(final Projection projection, final float zoom) {
         if (m_isBusy) {
             setQueue(projection, zoom);
+            LatLngBounds bounds = projection.getVisibleRegion().latLngBounds;
+            m_queueMercatorProjection=new MercatorProjection(m_mapIntance.getWidth(),m_mapIntance.getHeight()).withNorthWestBorder(new LatLng(bounds.getLatNorth(),bounds.getLonWest()))
+                    .withEastSouthBorder(new LatLng(bounds.getLatSouth(),bounds.getLonEast()));
             return;
         }
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
+        LatLngBounds bounds = projection.getVisibleRegion().latLngBounds;
+        m_mercatorProjection=new MercatorProjection(m_mapIntance.getWidth(),m_mapIntance.getHeight()).withNorthWestBorder(new LatLng(bounds.getLatNorth(),bounds.getLonWest()))
+                .withEastSouthBorder(new LatLng(bounds.getLatSouth(),bounds.getLonEast()));
+        super.updateMarkerOnMap(projection,zoom);
+    }
 
-                ((Activity) m_context).runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        long t = System.currentTimeMillis();
-                        updateMap(projection,getVisibleRegion(projection), zoom);
-                        Log.d("MarkerHandler", "updateMap: " + (System.currentTimeMillis() - t));
-                        t = System.currentTimeMillis();
-                        drawOnMap();
-                        Log.d("MarkerHandler", "drawOnMap: " + (System.currentTimeMillis() - t));
-                    }
-
-                });
-            }
-        });
-        thread.start();
+    @Override
+    protected void processQueue(){
+        m_mercatorProjection=m_queueMercatorProjection;
+        super.processQueue();
     }
 
     @Override
@@ -238,6 +237,10 @@ public class HandlerMapbox extends A_Handler<Projection, SymbolManager, Symbol, 
         style.addImage(m_markerId,
                 BitmapUtils.getBitmapFromDrawable(context.getResources().getDrawable(drawable)),
                 true);
+    }
+
+    public MercatorProjection getMercatorProjection(){
+        return m_mercatorProjection;
     }
 
     String getMarkerID(){

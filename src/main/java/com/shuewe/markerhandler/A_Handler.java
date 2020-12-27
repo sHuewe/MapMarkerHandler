@@ -13,6 +13,8 @@ package com.shuewe.markerhandler;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Color;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
@@ -39,6 +41,10 @@ public abstract class A_Handler<T, U, V, W, X> {
 
     static final String LOG_NAME="MapMarkerHandler";
 
+    public interface OnChangedMapListener{
+        void handleChangedMap();
+    }
+
     protected static List<A_Handler> listener= new ArrayList<A_Handler>();
 
     /**
@@ -48,7 +54,7 @@ public abstract class A_Handler<T, U, V, W, X> {
     /**
      * Min pixel distance for marker.
      */
-    protected static int MIN_PIXEL_DISTANCE;
+    private int m_minPixelDistance;
     /**
      * Zoom out.
      */
@@ -61,12 +67,25 @@ public abstract class A_Handler<T, U, V, W, X> {
      * The currently active marker
      */
     protected A_MapMarker m_marked;
+
+    private double m_markerFactor=1;
+
+    public double getMarkerSizeFactor(){
+        return m_markerFactor;
+    }
+
+    public void setMarkerSizeFactor(double factor){
+        m_markerFactor=factor;
+    }
+
     /**
      * The default color.
      */
     protected A_MapMarker.COLOR m_defaultColor=A_MapMarker.COLOR.BLUE;
 
     private W m_queueBounds;
+
+    private List<OnChangedMapListener> m_mapChangedListener=new ArrayList<OnChangedMapListener>();
 
     /**
      * The active color.
@@ -80,6 +99,7 @@ public abstract class A_Handler<T, U, V, W, X> {
      * Map to find marker object from given marker. Used to handle click events.
      */
     public Map<String, Object> m_nameMap = new HashMap<>();
+
     /**
      * Indicates if cursor should be used to select sortable element
      */
@@ -87,7 +107,7 @@ public abstract class A_Handler<T, U, V, W, X> {
     /**
      * The activity instance.
      */
-    protected Activity m_context;
+    protected Context m_context;
     /**
      * cursor for the sortable property.
      */
@@ -112,6 +132,8 @@ public abstract class A_Handler<T, U, V, W, X> {
      * Map instance.
      */
     protected U m_map;
+
+    private T m_projection;
     /**
      * current zoom level.
      */
@@ -170,6 +192,14 @@ public abstract class A_Handler<T, U, V, W, X> {
 
     public void setActiveColor(A_MapMarker.COLOR c){
         this.m_activeColor=c;
+    }
+
+    public T getProjection(){
+        return m_projection;
+    }
+
+    public void setProjection(T projection){
+        m_projection=projection;
     }
 
     private void resetMarkedMarker(){
@@ -298,6 +328,7 @@ public abstract class A_Handler<T, U, V, W, X> {
         marker.refresh();
         m_nameMap.put(element.getId(), marker);
         marker.setMarker(m_map, c);
+        Log.i(LOG_NAME,"Added elememnt");
         return marker;
     }
 
@@ -437,7 +468,15 @@ public abstract class A_Handler<T, U, V, W, X> {
      * @param min_distance   min distance to be set
      */
     public void setMarkerSpacing(int typedValueUnit, float min_distance) {
-        A_Handler.MIN_PIXEL_DISTANCE = (int) TypedValue.applyDimension(typedValueUnit, min_distance, m_metrics);
+        m_minPixelDistance = (int) TypedValue.applyDimension(typedValueUnit, min_distance, m_metrics);
+    }
+
+    public void setMarkerSpacing(int min_distance_pixel){
+        m_minPixelDistance = min_distance_pixel;
+    }
+
+    public int getMinPixelDistance(){
+        return m_minPixelDistance;
     }
 
     /**
@@ -455,6 +494,10 @@ public abstract class A_Handler<T, U, V, W, X> {
      */
     public abstract void showCurrentSortableMarker();
 
+    public void addOnMapChangedListener(OnChangedMapListener l){
+        m_mapChangedListener.add(l);
+    }
+
     /**
      * Updates the marker on a map.
      *
@@ -466,6 +509,7 @@ public abstract class A_Handler<T, U, V, W, X> {
             setQueue(projection, zoom);
             return;
         }
+        m_projection=projection;
         W bounds = getVisibleRegion(projection);
         Thread thread = new Thread(new Runnable() {
             @Override
@@ -474,14 +518,17 @@ public abstract class A_Handler<T, U, V, W, X> {
                 Log.i(LOG_NAME, "start calculation");
                 updateMap(projection,bounds, zoom);
                 Log.i(LOG_NAME, "Calculation ready, send to ui thread: " + (System.currentTimeMillis() - t));
-                ((Activity) m_context).runOnUiThread(new Runnable() {
+                new Handler(Looper.getMainLooper()).post(new Runnable() {
                     @Override
                     public void run() {
+
                         long t = System.currentTimeMillis();
                         drawOnMap();
                         Log.i(LOG_NAME, "Draw ready: " + (System.currentTimeMillis() - t));
+                        for(OnChangedMapListener listener:m_mapChangedListener){
+                            listener.handleChangedMap();
+                        }
                     }
-
                 });
             }
         });
@@ -536,7 +583,7 @@ public abstract class A_Handler<T, U, V, W, X> {
      * @param context Activity context
      * @param map     instance
      */
-    protected void init(Activity context, U map) {
+    public void init(Context context, U map) {
         m_context = context;
         m_map = map;
     }
@@ -598,10 +645,14 @@ public abstract class A_Handler<T, U, V, W, X> {
 
         //Is there another update waiting?
         if (m_queuePending) {
-            m_queuePending = false;
-            updateMap(m_queueProjection,m_queueBounds, m_queueZoom);
+            processQueue();
         }
         m_isBusy = false;
+    }
+
+    protected void processQueue(){
+        m_queuePending= false;
+        updateMap(m_queueProjection,m_queueBounds, m_queueZoom);
     }
 
     /**
@@ -628,7 +679,7 @@ public abstract class A_Handler<T, U, V, W, X> {
         Set<I_SortableMapElement> ret = new HashSet<>();
         long t = System.currentTimeMillis();
         Map<I_SortableMapElement, Boolean> changedPictures = getVisibleElements(bounds);
-        Log.i(LOG_NAME,"Detect visible elements in "+(System.currentTimeMillis()-t)+" ms");
+        Log.i(LOG_NAME,"Detect visible elements in "+(System.currentTimeMillis()-t)+" ms, found "+changedPictures.size()+" Elements have changed");
         for (I_SortableMapElement element : changedPictures.keySet()) {
             if (changedPictures.get(element).equals(true)) {
                 markerMap.put(element, null); //new element
@@ -663,6 +714,10 @@ public abstract class A_Handler<T, U, V, W, X> {
             }
         }
         for(A_MapMarker marker:m_marker){
+            if(Double.isNaN(marker.m_center.latitude) || Double.isNaN(marker.m_center.longitude)){
+                Log.w(LOG_NAME,"Marker has Nan value..");
+                continue;
+            }
             if(!isInRegion(bounds,marker.m_center)){
                 List<I_SortableMapElement> markerElements=marker.getElements();
                 for(I_SortableMapElement element: markerElements){

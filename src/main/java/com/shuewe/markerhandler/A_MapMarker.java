@@ -211,7 +211,7 @@ public abstract class A_MapMarker<T, S, U, V> {
             if (!marker.isOnMap()) {
                 continue;
             }
-            if (marker.getPixelDistance(element.getLatLng(), projection) <= A_Handler.MIN_PIXEL_DISTANCE) {
+            if (marker.getPixelDistance(element.getLatLng(), projection) <= m_handler.getMinPixelDistance()) {
                 marker.addElement(element);
                 marker.refresh();
                 return marker;
@@ -344,7 +344,7 @@ public abstract class A_MapMarker<T, S, U, V> {
                 List<I_SortableMapElement> elementsToRemove = new ArrayList<>();
                 List<I_SortableMapElement> elements = marker.getElements();
                 for (I_SortableMapElement element : elements) {
-                    if (marker.getPixelDistance(element.getLatLng(), projection) > A_Handler.MIN_PIXEL_DISTANCE) {
+                    if (marker.getPixelDistance(element.getLatLng(), projection) > m_handler.getMinPixelDistance()) {
                         markerMap.put(element, null);
                         ret.add(element);
                         elementsToRemove.add(element);
@@ -372,7 +372,7 @@ public abstract class A_MapMarker<T, S, U, V> {
             if (markerList.get(i).isOnMap()) {
                 List<A_MapMarker> collect = new ArrayList<>();
                 for (int j = i + 1; j < markerList.size(); j++) {
-                    if (markerList.get(i).getPixelDistance(markerList.get(j).m_center, projection) <= A_Handler.MIN_PIXEL_DISTANCE) {
+                    if (markerList.get(i).getPixelDistance(markerList.get(j).m_center, projection) <= m_handler.getMinPixelDistance()) {
                         collect.add(markerList.get(j));
                     }
                 }
