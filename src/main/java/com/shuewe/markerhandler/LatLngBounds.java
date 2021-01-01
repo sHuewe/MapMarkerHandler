@@ -140,4 +140,17 @@ public class LatLngBounds {
             m_southEast.setLng(point.longitude);
         }
     }
+
+    public boolean setDefaultLatLng() {
+        if(m_southEast != null && m_northWest!= null){
+            return false;
+        }
+        if(m_southEast==null){
+            m_southEast=new LatLng(52,15);
+        }
+        if(m_northWest==null){
+            m_northWest=new LatLng(49,9);
+        }
+        return true;
+    }
 }
